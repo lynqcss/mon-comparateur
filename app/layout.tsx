@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { Suspense } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 
@@ -19,9 +20,13 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} font-sans scroll-smooth`}>
       <body className="min-h-screen bg-slate-50/50 selection:bg-zinc-900 selection:text-white dark:bg-zinc-950 dark:selection:bg-white dark:selection:text-zinc-900">
-        <Header />
+        <Suspense fallback={<div className="h-16 bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800" />}>
+          <Header />
+        </Suspense>
         <main className="relative">{children}</main>
-        <Footer />
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
       </body>
     </html>
   )

@@ -11,6 +11,7 @@ type ProductsPageProps = {
     page?: string
     categoryId?: string
     rootCategory?: string
+    categoryPath?: string
     q?: string
     brand?: string
     brands?: string | string[]
@@ -47,21 +48,30 @@ type MerchantRow = {
 }
 
 const ROOT_ICONS: Record<string, string> = {
-  'Animals & Pet Supplies': '🐾',
-  'Apparel & Accessories': '👜',
-  'Cameras & Optics': '📷',
-  'Electronics': '🔌',
-  'Food, Beverages & Tobacco': '🍔',
-  'Furniture': '🛋️',
-  'Hardware': '🛠️',
-  'Health & Beauty': '✨',
-  'Home & Garden': '🏠',
-  'Luggage & Bags': '🧳',
-  'Media': '🎬',
-  'Software': '💾',
-  'Sporting Goods': '🏀',
-  'Toys & Games': '⚽',
-  'Vehicles & Parts': '🏁',
+  'Adulte': '🔞',
+  'Alimentation, boissons et tabac': '🍎',
+  'Animaux et articles pour animaux de compagnie': '🐾',
+  'Appareils photo, caméras et instruments d\'optique': '📷',
+  'Appareils électroniques': '📱',
+  'Arts et loisirs': '🎨',
+  'Articles de sport': '⚽',
+  'Bagages et maroquinerie': '🧳',
+  'Bébés et tout-petits': '👶',
+  'Commerce et industrie': '🏭',
+  'Entreprise et industrie': '🏭',
+  'Équipements sportifs': '⚽',
+  'Fournitures de bureau': '📎',
+  'Jeux et jouets': '🎮',
+  'Logiciels': '💻',
+  'Maison et jardin': '🏠',
+  'Meubles': '🛋️',
+  'Médias': '🎬',
+  'Quincaillerie': '🔧',
+  'Santé et beauté': '✨',
+  'Véhicules et accessoires': '🚗',
+  'Vêtements et accessoires': '👕',
+  'Armes': '🔫',
+  'Autres': '❓'
 }
 
 function formatPrice(value: number | null, currency: string | null) {
@@ -75,7 +85,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   const page = Math.max(Number(params.page || '1') || 1, 1)
   const categoryId = params.categoryId ? Number(params.categoryId) : null
-  const rootCategory = params.rootCategory || null
+  const categoryPath = params.categoryPath ? decodeURIComponent(params.categoryPath) : null
+  const rootCategory = params.rootCategory || (categoryPath ? categoryPath.split(' > ')[0] : null)
   const q = params.q?.trim() || ''
 
   // Multi-select handling
@@ -112,13 +123,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     categories = (cats as CategoryRow[]) || []
   }
 
-  const rootsMap = new Map<string, CategoryRow[]>()
-  for (const cat of categories) {
-    const key = cat.level1 || 'Autres'
-    if (!rootsMap.has(key)) rootsMap.set(key, [])
-    rootsMap.get(key)!.push(cat)
-  }
-  const rootCategories = Array.from(rootsMap.keys()).sort()
+  // To build the sidebar we just need the distinct level1 of these categories
+  const rootCategories = Array.from(new Set(categories.map(c => c.level1).filter(Boolean))) as string[]
+  rootCategories.sort()
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
@@ -129,9 +136,29 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     .eq('country_code', selectedCountry)
 
   if (categoryId) query = query.eq('google_product_category_id', categoryId)
-  else if (rootCategory && rootsMap.has(rootCategory)) {
-    const ids = rootsMap.get(rootCategory)!.map(c => c.id).filter(Boolean)
-    if (ids.length > 0) query = query.in('google_product_category_id', ids)
+  else if (categoryPath) {
+    const { data: matchedCats } = await supabase
+      .from('google_categories')
+      .select('id')
+      .ilike('full_path', `${categoryPath}%`)
+
+    if (matchedCats && matchedCats.length > 0) {
+      query = query.in('google_product_category_id', matchedCats.map(c => c.id))
+    } else {
+      query = query.eq('google_product_category_id', -1) // force no match
+    }
+  }
+  else if (rootCategory) {
+    const { data: rootCatIds } = await supabase
+      .from('google_categories')
+      .select('id')
+      .eq('level1', rootCategory)
+
+    if (rootCatIds && rootCatIds.length > 0) {
+      query = query.in('google_product_category_id', rootCatIds.map(c => c.id))
+    } else {
+      query = query.eq('google_product_category_id', -1) // force no match
+    }
   }
 
   if (q) query = query.ilike('title', `%${q}%`)
@@ -159,6 +186,16 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     .not('brand', 'is', null)
 
   if (categoryId) brandsQuery = brandsQuery.eq('google_product_category_id', categoryId)
+  else if (categoryPath) {
+    const { data: matchedCats } = await supabase
+      .from('google_categories')
+      .select('id')
+      .ilike('full_path', `${categoryPath}%`)
+
+    if (matchedCats && matchedCats.length > 0) {
+      brandsQuery = brandsQuery.in('google_product_category_id', matchedCats.map(c => c.id))
+    }
+  }
   else if (rootCategory) {
     const { data: rootCatIds } = await supabase
       .from('google_categories')
@@ -185,7 +222,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   let sortedBrands = Object.keys(brandCounts).sort((a, b) => brandCounts[b] - brandCounts[a])
 
   // Limit to top 100 ONLY on "All Products" page (safety)
-  if (!categoryId && !rootCategory) {
+  if (!categoryId && !rootCategory && !categoryPath) {
     sortedBrands = sortedBrands.slice(0, 100)
   }
 
@@ -199,6 +236,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     if (q) sp.set('q', q)
     if (categoryId) sp.set('categoryId', String(categoryId))
     if (rootCategory) sp.set('rootCategory', rootCategory)
+    if (categoryPath) sp.set('categoryPath', encodeURIComponent(categoryPath))
     if (minPrice) sp.set('minPrice', String(minPrice))
     if (maxPrice) sp.set('maxPrice', String(maxPrice))
     if (sort) sp.set('sort', sort)
@@ -219,10 +257,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            {(t.categories as any)[rootCategory || ''] || rootCategory || q || t.products.title_all}
+            {categoryPath ? categoryPath.split(' > ').pop() : ((t.categories as any)[rootCategory || ''] || rootCategory || q || t.products.title_all)}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {total.toLocaleString()} {t.products.found}
+          <p className="mt-1 text-sm text-zinc-500" suppressHydrationWarning>
+            {total.toLocaleString('fr-FR')} {t.products.found}
           </p>
         </div>
 
@@ -257,7 +295,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.categories}</h3>
             <div className="space-y-1">
               <Link
-                href={buildUrl({ rootCategory: null, categoryId: null, brands: null, merchants: null, minPrice: null, maxPrice: null, q: null })}
+                href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, merchants: null, minPrice: null, maxPrice: null, q: null })}
                 className={`block rounded-lg px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
               >
                 {t.products.all_offers}
@@ -265,7 +303,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {rootCategories.map(root => (
                 <Link
                   key={root}
-                  href={buildUrl({ rootCategory: root, categoryId: null })}
+                  href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null })}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${rootCategory === root ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
                 >
                   <span>{ROOT_ICONS[root] || '📂'}</span>
@@ -333,7 +371,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </aside>
 
         {/* Product Grid */}
-        <section>
+        <div className="flex-1">
           {productList.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {productList.map((p) => (
@@ -360,7 +398,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                       {p.title}
                     </Link>
                     <div className="mt-auto flex items-center justify-between">
-                      <span className="text-lg font-bold text-zinc-900 dark:text-white">{formatPrice(p.price_value, p.price_currency)}</span>
+                      <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(p.price_value, p.price_currency)}</span>
                       <Link href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -413,7 +451,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               </Link>
             </nav>
           )}
-        </section>
+        </div>
       </div>
     </div>
   )

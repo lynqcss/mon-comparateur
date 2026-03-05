@@ -34,7 +34,7 @@ export default async function JoinPage({ searchParams }: Props) {
                             {t.join.hero_subtitle}
                         </p>
                         <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-                            <Link href={buildUrl('/admin/merchants')} className="rounded-full bg-zinc-900 px-10 py-5 text-lg font-bold text-white shadow-2xl transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 dark:bg-white dark:text-zinc-900">
+                            <Link href="/onboarding" className="rounded-full bg-zinc-900 px-10 py-5 text-lg font-bold text-white shadow-2xl transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 dark:bg-white dark:text-zinc-900">
                                 {t.join.cta_primary}
                             </Link>
                             <a href="#benefits" className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white hover:underline">
@@ -132,7 +132,7 @@ export default async function JoinPage({ searchParams }: Props) {
                             Prêt à faire passer vos campagnes <br className="hidden sm:block" /> au niveau supérieur ?
                         </h2>
                         <div className="mt-12 flex flex-col items-center gap-6">
-                            <Link href={buildUrl('/admin/merchants')} className="rounded-full bg-white px-12 py-5 text-lg font-bold text-zinc-900 shadow-xl transition-all hover:bg-zinc-100 hover:scale-105 active:scale-95 dark:bg-zinc-900 dark:text-white">
+                            <Link href="/onboarding" className="rounded-full bg-white px-12 py-5 text-lg font-bold text-zinc-900 shadow-xl transition-all hover:bg-zinc-100 hover:scale-105 active:scale-95 dark:bg-zinc-900 dark:text-white">
                                 {t.join.cta_primary}
                             </Link>
                             <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 uppercase tracking-widest">

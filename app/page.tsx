@@ -15,12 +15,12 @@ export default async function Home({ searchParams }: HomeProps) {
   const t = getTranslation(selectedLang);
 
   const categories = [
-    { name: selectedLang === 'fr' ? "Electronique" : "Electronics", icon: "🔌", color: "bg-zinc-50 text-zinc-900", search: "Electronics" },
-    { name: selectedLang === 'fr' ? "Maison" : "Home", icon: "🏠", color: "bg-zinc-50 text-zinc-900", search: "Home & Garden" },
-    { name: selectedLang === 'fr' ? "Mode" : "Fashion", icon: "👜", color: "bg-zinc-50 text-zinc-900", search: "Apparel & Accessories" },
-    { name: selectedLang === 'fr' ? "Beauté" : "Beauty", icon: "✨", color: "bg-zinc-50 text-zinc-900", search: "Health & Beauty" },
-    { name: selectedLang === 'fr' ? "Sport" : "Sport", icon: "🏀", color: "bg-zinc-50 text-zinc-900", search: "Sporting Goods" },
-    { name: selectedLang === 'fr' ? "High-Tech" : "Tech", icon: "📷", color: "bg-zinc-50 text-zinc-900", search: "Cameras & Optics" },
+    { name: selectedLang === 'fr' ? "Electronique" : "Electronics", icon: "🔌", color: "bg-zinc-50 text-zinc-900", search: "Appareils électroniques" },
+    { name: selectedLang === 'fr' ? "Maison" : "Home", icon: "🏠", color: "bg-zinc-50 text-zinc-900", search: "Maison et jardin" },
+    { name: selectedLang === 'fr' ? "Mode" : "Fashion", icon: "👜", color: "bg-zinc-50 text-zinc-900", search: "Vêtements et accessoires" },
+    { name: selectedLang === 'fr' ? "Beauté" : "Beauty", icon: "✨", color: "bg-zinc-50 text-zinc-900", search: "Santé et beauté" },
+    { name: selectedLang === 'fr' ? "Sport" : "Sport", icon: "🏀", color: "bg-zinc-50 text-zinc-900", search: "Articles de sport" },
+    { name: selectedLang === 'fr' ? "High-Tech" : "Tech", icon: "📷", color: "bg-zinc-50 text-zinc-900", search: "Appareils photo, caméras et instruments d'optique" },
   ];
 
   const buildUrl = (path: string, extra: Record<string, string> = {}) => {
@@ -127,7 +127,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   ))}
                 </ul>
                 <div className="pt-4">
-                  <Link href={buildUrl('/admin/merchants')} className="inline-flex items-center rounded-full bg-zinc-900 px-8 py-4 text-sm font-bold text-white shadow-xl transition-all hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 active:scale-95">
+                  <Link href={buildUrl('/join')} className="inline-flex items-center rounded-full bg-zinc-900 px-8 py-4 text-sm font-bold text-white shadow-xl transition-all hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 active:scale-95">
                     {t.nav.diffuse}
                   </Link>
                 </div>

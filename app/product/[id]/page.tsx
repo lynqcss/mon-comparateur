@@ -95,12 +95,30 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Breadcrumbs */}
-      <nav className="mb-8 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-50 pb-4 dark:border-zinc-800">
-        <Link href={`/?country=${selectedCountry}&lang=${selectedLang}`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.product.home}</Link>
+      <nav className="mb-8 flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 border-b border-zinc-50 pb-4 dark:border-zinc-800">
+        <Link href={`/?country=${selectedCountry}&lang=${selectedLang}`} className="hover:text-zinc-900 dark:hover:text-white transition-colors whitespace-nowrap">{t.product.home}</Link>
         <span className="opacity-30">/</span>
-        <Link href={`/products?country=${selectedCountry}&lang=${selectedLang}`} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.product.products}</Link>
+        <Link href={`/products?country=${selectedCountry}&lang=${selectedLang}`} className="hover:text-zinc-900 dark:hover:text-white transition-colors whitespace-nowrap">{t.product.products}</Link>
         <span className="opacity-30">/</span>
-        <span className="text-zinc-900 dark:text-white truncate max-w-[200px]">{product.title}</span>
+        {categoryPath && (
+          <>
+            {categoryPath.split(' > ').map((part, i, arr) => {
+              const cumulativePath = arr.slice(0, i + 1).join(' > ')
+              return (
+                <span key={i} className="flex items-center gap-2">
+                  <Link
+                    href={`/products?country=${selectedCountry}&lang=${selectedLang}&categoryPath=${encodeURIComponent(cumulativePath)}`}
+                    className="text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors whitespace-nowrap"
+                  >
+                    {part}
+                  </Link>
+                  <span className="opacity-30">/</span>
+                </span>
+              )
+            })}
+          </>
+        )}
+        <span className="text-zinc-900 dark:text-white truncate max-w-[300px]" title={product.title || ''}>{product.title}</span>
       </nav>
 
       <div className="grid gap-12 lg:grid-cols-2 lg:items-start">

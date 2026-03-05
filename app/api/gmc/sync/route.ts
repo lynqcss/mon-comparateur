@@ -82,6 +82,16 @@ export async function GET(req: NextRequest) {
     )
   }
 
+  // Check if sync is paused
+  if (merchant.sync_paused) {
+    return NextResponse.json(
+      { success: false, message: 'Synchronisation en pause pour ce marchand' },
+      { status: 200 }
+    )
+  }
+
+  const startTime = Date.now()
+
   try {
     const content = getGoogleMerchantClient()
 
@@ -194,9 +204,24 @@ export async function GET(req: NextRequest) {
     // 5) Mise à jour du statut d'import
     await updateImportStatus(merchant.id, 'success', rows.length, null)
 
+    // 6) Ecrire le log de synchronisation
+    const durationMs = Date.now() - startTime
+    await supabase.from('sync_logs').insert({
+      merchant_id: merchant.id,
+      product_count: rows.length,
+      status: 'success',
+      duration_ms: durationMs,
+      message: null,
+    })
+
+    // 7) Nettoyage des logs > 30 jours
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    await supabase.from('sync_logs').delete().lt('created_at', thirtyDaysAgo)
+
     return NextResponse.json({
       success: true,
       imported: rows.length,
+      duration_ms: durationMs,
     })
   } catch (err: any) {
     console.error('Erreur sync GMC:', err)
@@ -207,6 +232,16 @@ export async function GET(req: NextRequest) {
       0,
       err?.message || 'Erreur inconnue lors de la synchro GMC'
     )
+
+    // Log l'erreur aussi
+    const durationMs = Date.now() - startTime
+    await supabase.from('sync_logs').insert({
+      merchant_id: merchant.id,
+      product_count: 0,
+      status: 'error',
+      duration_ms: durationMs,
+      message: err?.message || 'Erreur inconnue',
+    })
 
     return NextResponse.json(
       {
