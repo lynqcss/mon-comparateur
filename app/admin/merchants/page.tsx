@@ -8,6 +8,10 @@ type Merchant = {
   name: string
   website_url: string
   default_category: string | null
+  last_import_at: string | null
+  last_import_status: 'success' | 'error' | null
+  last_import_count: number | null
+  last_import_message: string | null
 }
 
 export default function MerchantsPage() {
@@ -99,13 +103,13 @@ export default function MerchantsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-12">
         <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white">Admin CSS</h1>
         <p className="mt-2 text-zinc-500 dark:text-zinc-400">Gérez vos marchands partenaires et synchronisez leurs catalogues produits.</p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[320px_1fr]">
         {/* Form Column */}
         <div>
           <div className="sticky top-24 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -179,43 +183,71 @@ export default function MerchantsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div>
+            <table className="w-full table-fixed text-left text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800">
-                  <th className="px-6 py-4 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">ID / GMC</th>
-                  <th className="px-6 py-4 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Marchand</th>
-                  <th className="px-6 py-4 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Status</th>
-                  <th className="px-6 py-4 font-bold text-zinc-400 uppercase tracking-widest text-[10px] text-right">Actions</th>
+                  <th className="w-[80px] px-3 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">ID</th>
+                  <th className="px-3 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Marchand</th>
+                  <th className="w-[70px] px-3 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px] text-center">Produits</th>
+                  <th className="w-[110px] px-3 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px]">Synchro</th>
+                  <th className="w-[80px] px-3 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px] text-center">Status</th>
+                  <th className="w-[130px] px-3 pr-6 py-3 font-bold text-zinc-400 uppercase tracking-widest text-[10px] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
                 {merchants.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-zinc-400">Aucun marchand enregistré</td>
+                    <td colSpan={6} className="px-3 py-12 text-center text-zinc-400">Aucun marchand enregistré</td>
                   </tr>
                 ) : (
                   merchants.map((m) => (
                     <tr key={m.id} className="group transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-zinc-900 dark:text-white">#{m.id}</div>
-                        <div className="text-xs text-zinc-400">{m.gmc_id}</div>
+                      <td className="px-3 py-3">
+                        <div className="font-bold text-zinc-900 dark:text-white text-xs">#{m.id}</div>
+                        <div className="text-[10px] text-zinc-400 truncate">{m.gmc_id}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="font-bold text-zinc-900 dark:text-white">{m.name}</div>
-                        <a href={m.website_url} target="_blank" className="text-xs text-zinc-400 hover:text-zinc-900 hover:underline">{m.website_url}</a>
+                      <td className="px-3 py-3">
+                        <div className="font-bold text-zinc-900 dark:text-white text-xs truncate">{m.name}</div>
+                        <a href={m.website_url} target="_blank" className="text-[10px] text-zinc-400 hover:text-zinc-900 hover:underline truncate block">{m.website_url}</a>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-                          Actif
-                        </span>
+                      <td className="px-3 py-3 text-center">
+                        <div className="text-sm font-medium text-zinc-900 dark:text-white">
+                          {m.last_import_count ?? 0}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-3 py-3">
+                        <div className="text-[11px] text-zinc-500">
+                          {m.last_import_at ? new Date(m.last_import_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Jamais'}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        {m.last_import_status === 'success' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                            OK
+                          </span>
+                        ) : m.last_import_status === 'error' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-600 dark:bg-red-950/30 dark:text-red-400">
+                            Erreur
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500">
+                            —
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 pr-6 py-3 text-right">
                         <button
                           onClick={() => handleSync(m.id)}
                           disabled={syncingId === m.id || loading}
-                          className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+                          className="inline-flex items-center justify-center rounded-xl bg-zinc-900 px-3 py-2 text-xs font-bold text-white transition-all hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900"
                         >
                           {syncingId === m.id ? (
                             <span className="flex items-center gap-2">
