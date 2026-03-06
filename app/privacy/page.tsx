@@ -102,8 +102,8 @@ export default async function PrivacyPage({ searchParams }: Props) {
                     </ul>
                     <p className="mt-4">
                         {isEn
-                            ? 'To exercise these rights, contact us at: contact@lynq.css.'
-                            : 'Pour exercer ces droits, contactez-nous à : contact@lynq.css.'}
+                            ? 'To exercise these rights, contact us at: contact@lynq-css.com.'
+                            : 'Pour exercer ces droits, contactez-nous à : contact@lynq-css.com.'}
                     </p>
                 </section>
 
@@ -111,8 +111,8 @@ export default async function PrivacyPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">6. {isEn ? 'CONTACT' : 'CONTACT'}</h2>
                     <p>
                         {isEn
-                            ? 'For any questions regarding this policy or the protection of your data, you can contact our responsible officer at the following address: contact@lynq.css.'
-                            : 'Pour toute question concernant cette politique ou la protection de vos données, vous pouvez contacter notre responsable à l\'adresse suivante : contact@lynq.css.'}
+                            ? 'For any questions regarding this policy or the protection of your data, you can contact our responsible officer at the following address: contact@lynq-css.com.'
+                            : 'Pour toute question concernant cette politique ou la protection de vos données, vous pouvez contacter notre responsable à l\'adresse suivante : contact@lynq-css.com.'}
                     </p>
                 </section>
             </div>

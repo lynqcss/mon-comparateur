@@ -28,7 +28,7 @@ export default async function LegalPage({ searchParams }: Props) {
                         <li><strong>SIREN :</strong> [Numéro SIREN à compléter]</li>
                         <li><strong>RCS :</strong> [Ville, ex: Paris]</li>
                         <li><strong>{isEn ? 'Intracommunity VAT:' : 'TVA Intracommunautaire :'}</strong> [Numéro de TVA]</li>
-                        <li><strong>Email :</strong> contact@lynq.css</li>
+                        <li><strong>Email :</strong> contact@lynq-css.com</li>
                     </ul>
                 </section>
 
@@ -72,8 +72,8 @@ export default async function LegalPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">5. {isEn ? 'PERSONAL DATA' : 'DONNÉES PERSONNELLES'}</h2>
                     <p>
                         {isEn
-                            ? 'In accordance with the General Data Protection Regulation (GDPR), the user has a right of access, rectification, and deletion of data concerning them. These rights are exercised via the address: contact@lynq.css. For more information, please consult our Privacy Policy.'
-                            : 'Conformément au Règlement Général sur la Protection des Données (RGPD), l\'utilisateur dispose d\'un droit d\'accès, de rectification et de suppression des données le concernant. Ces droits s\'exercent via l\'adresse : contact@lynq.css. Pour plus d\'informations, veuillez consulter notre Politique de Confidentialité.'}
+                            ? 'In accordance with the General Data Protection Regulation (GDPR), the user has a right of access, rectification, and deletion of data concerning them. These rights are exercised via the address: contact@lynq-css.com. For more information, please consult our Privacy Policy.'
+                            : 'Conformément au Règlement Général sur la Protection des Données (RGPD), l\'utilisateur dispose d\'un droit d\'accès, de rectification et de suppression des données le concernant. Ces droits s\'exercent via l\'adresse : contact@lynq-css.com. Pour plus d\'informations, veuillez consulter notre Politique de Confidentialité.'}
                     </p>
                 </section>
 
@@ -85,7 +85,7 @@ export default async function LegalPage({ searchParams }: Props) {
                             : 'Pour toute réclamation, question ou signalement de contenu illicite, vous pouvez nous contacter :'}
                     </p>
                     <ul className="list-none pl-0 space-y-2 mt-2">
-                        <li><strong>{isEn ? 'By email:' : 'Par e-mail :'}</strong> contact@lynq.css</li>
+                        <li><strong>{isEn ? 'By email:' : 'Par e-mail :'}</strong> contact@lynq-css.com</li>
                     </ul>
                 </section>
             </div>

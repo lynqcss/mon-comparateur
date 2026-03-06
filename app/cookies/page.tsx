@@ -86,8 +86,8 @@ export default async function CookiesPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">5. {isEn ? 'CONTACT' : 'CONTACT'}</h2>
                     <p>
                         {isEn
-                            ? 'For any questions about our cookie management, you can write to us at: contact@lynq.css.'
-                            : 'Pour toute question sur notre gestion des cookies, vous pouvez nous écrire à : contact@lynq.css.'}
+                            ? 'For any questions about our cookie management, you can write to us at: contact@lynq-css.com.'
+                            : 'Pour toute question sur notre gestion des cookies, vous pouvez nous écrire à : contact@lynq-css.com.'}
                     </p>
                 </section>
             </div>
