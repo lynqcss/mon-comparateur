@@ -8,12 +8,16 @@ export async function GET(req: NextRequest) {
     const state = searchParams.get('state')
 
     let returnUrl = null
+    let isCms = false
     if (state) {
         try {
             const decodedState = Buffer.from(state, 'base64').toString('ascii')
             const stateObj = JSON.parse(decodedState)
             if (stateObj.returnUrl) {
                 returnUrl = stateObj.returnUrl
+            }
+            if (stateObj.isCms) {
+                isCms = true
             }
         } catch (e) {
             console.error('Failed to parse state param', e)
@@ -80,6 +84,13 @@ export async function GET(req: NextRequest) {
         if (insertError || !session) {
             console.error('Error saving session:', insertError)
             return NextResponse.redirect(new URL('/onboarding?error=db_error', req.url))
+        }
+
+        // If this is a CMS headless integration, return the token explicitly
+        if (isCms && returnUrl) {
+            const redirectUrl = new URL(returnUrl)
+            redirectUrl.searchParams.set('lynq_token', session.id)
+            return NextResponse.redirect(redirectUrl)
         }
 
         // Redirect to onboarding page with session ID

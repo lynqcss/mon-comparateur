@@ -18,9 +18,10 @@ export async function GET(req: NextRequest) {
 
     const { searchParams: reqSearchParams } = new URL(req.url)
     const returnUrl = reqSearchParams.get('return_url')
+    const isCms = reqSearchParams.get('is_cms') === 'true'
 
-    // Encode return_url inside state parameter
-    const stateObj = { returnUrl }
+    // Encode return_url and is_cms inside state parameter
+    const stateObj = { returnUrl, isCms }
     const stateStr = Buffer.from(JSON.stringify(stateObj)).toString('base64')
 
     const params = new URLSearchParams({
