@@ -15,6 +15,7 @@ function OnboardingContent() {
     const stepParam = searchParams.get('step')
     const sessionId = searchParams.get('session')
     const errorParam = searchParams.get('error')
+    const returnUrl = searchParams.get('return_url')
 
     const [currentStep, setCurrentStep] = useState<'connect' | 'merchants' | 'confirm'>(
         stepParam === 'merchants' ? 'merchants' : stepParam === 'confirm' ? 'confirm' : 'connect'
@@ -161,7 +162,7 @@ function OnboardingContent() {
                         </p>
                         <div className="mt-12">
                             <a
-                                href="/api/auth/login"
+                                href={`/api/auth/login${returnUrl ? '?return_url=' + encodeURIComponent(returnUrl) : ''}`}
                                 className="inline-flex items-center gap-3 rounded-full border border-zinc-200 bg-white px-8 py-4 text-base font-bold text-zinc-700 shadow-sm transition-all hover:shadow-lg hover:scale-105 active:scale-95"
                             >
                                 <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -318,13 +319,30 @@ function OnboardingContent() {
                                 Vous pouvez également retrouver la notification dans l&apos;onglet <span className="font-semibold">Notifications</span> de votre Google Merchant Center.
                             </p>
                         </div>
-                        <div className="mt-10">
-                            <Link
-                                href="/"
-                                className="inline-flex rounded-full bg-zinc-900 px-10 py-4 text-base font-bold text-white shadow-lg transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95"
-                            >
-                                Retour à l&apos;accueil
-                            </Link>
+                        <div className="mt-10 flex flex-col items-center gap-4">
+                            {returnUrl ? (
+                                <Link
+                                    href={(() => {
+                                        try {
+                                            const url = new URL(returnUrl)
+                                            url.searchParams.set('lynq_connected', 'true')
+                                            return url.toString()
+                                        } catch {
+                                            return returnUrl
+                                        }
+                                    })()}
+                                    className="inline-flex rounded-full bg-zinc-900 px-10 py-4 text-base font-bold text-white shadow-lg transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95"
+                                >
+                                    Retourner à votre boutique
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/"
+                                    className="inline-flex rounded-full bg-zinc-900 px-10 py-4 text-base font-bold text-white shadow-lg transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95"
+                                >
+                                    Retour à l&apos;accueil
+                                </Link>
+                            )}
                         </div>
                     </div>
                 )}

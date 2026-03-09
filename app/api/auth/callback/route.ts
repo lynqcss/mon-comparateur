@@ -5,6 +5,20 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const code = searchParams.get('code')
     const error = searchParams.get('error')
+    const state = searchParams.get('state')
+
+    let returnUrl = null
+    if (state) {
+        try {
+            const decodedState = Buffer.from(state, 'base64').toString('ascii')
+            const stateObj = JSON.parse(decodedState)
+            if (stateObj.returnUrl) {
+                returnUrl = stateObj.returnUrl
+            }
+        } catch (e) {
+            console.error('Failed to parse state param', e)
+        }
+    }
 
     if (error) {
         return NextResponse.redirect(new URL('/onboarding?error=consent_denied', req.url))
@@ -69,9 +83,12 @@ export async function GET(req: NextRequest) {
         }
 
         // Redirect to onboarding page with session ID
-        return NextResponse.redirect(
-            new URL(`/onboarding?step=merchants&session=${session.id}`, req.url)
-        )
+        const redirectUrl = new URL(`/onboarding?step=merchants&session=${session.id}`, req.url)
+        if (returnUrl) {
+            redirectUrl.searchParams.set('return_url', returnUrl)
+        }
+
+        return NextResponse.redirect(redirectUrl)
     } catch (err) {
         console.error('OAuth callback error:', err)
         return NextResponse.redirect(new URL('/onboarding?error=unknown', req.url))

@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     const clientId = process.env.GOOGLE_CLIENT_ID
     const redirectUri = process.env.GOOGLE_REDIRECT_URI
 
@@ -16,6 +16,13 @@ export async function GET() {
         'https://www.googleapis.com/auth/userinfo.email', // Get user email
     ].join(' ')
 
+    const { searchParams: reqSearchParams } = new URL(req.url)
+    const returnUrl = reqSearchParams.get('return_url')
+
+    // Encode return_url inside state parameter
+    const stateObj = { returnUrl }
+    const stateStr = Buffer.from(JSON.stringify(stateObj)).toString('base64')
+
     const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: redirectUri,
@@ -23,6 +30,7 @@ export async function GET() {
         scope: scopes,
         access_type: 'offline',   // Get refresh_token
         prompt: 'consent',        // Force consent to always get refresh_token
+        state: stateStr,
     })
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
