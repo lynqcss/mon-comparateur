@@ -19,8 +19,8 @@ export default async function Home({ searchParams }: HomeProps) {
     { name: selectedLang === 'fr' ? "Maison" : "Home", icon: "🏠", color: "bg-zinc-50 text-zinc-900", search: "Maison et jardin" },
     { name: selectedLang === 'fr' ? "Mode" : "Fashion", icon: "👜", color: "bg-zinc-50 text-zinc-900", search: "Vêtements et accessoires" },
     { name: selectedLang === 'fr' ? "Beauté" : "Beauty", icon: "✨", color: "bg-zinc-50 text-zinc-900", search: "Santé et beauté" },
-    { name: selectedLang === 'fr' ? "Sport" : "Sport", icon: "🏀", color: "bg-zinc-50 text-zinc-900", search: "Articles de sport" },
-    { name: selectedLang === 'fr' ? "High-Tech" : "Tech", icon: "📷", color: "bg-zinc-50 text-zinc-900", search: "Appareils photo, caméras et instruments d'optique" },
+    { name: selectedLang === 'fr' ? "Sport" : "Sport", icon: "🏀", color: "bg-zinc-50 text-zinc-900", search: "Équipements sportifs" },
+    { name: selectedLang === 'fr' ? "High-Tech" : "Tech", icon: "📷", color: "bg-zinc-50 text-zinc-900", search: "Appareils électroniques" },
   ];
 
   const buildUrl = (path: string, extra: Record<string, string> = {}) => {
