@@ -125,7 +125,7 @@ export const translations = {
             benefit4_desc: 'En rejoignant Lynq, vous bénéficiez d\'un audit mensuel de vos flux produits par nos experts Shopping. Nous ne nous contentons pas de réduire vos coûts, nous optimisons votre visibilité pour maximiser votre ROAS.',
             steps_title: 'Une mise en place simple, en 3 étapes',
             step1_title: 'Connexion via Google',
-            step1_desc: 'Connectez-vous avec votre compte Google Ads/Merchant Center existant en un clic. Aucun compte supplémentaire à créer.',
+            step1_desc: 'Connectez-vous avec votre compte Google en un clic. Aucun compte supplémentaire à créer.',
             step2_title: 'Sélectionnez votre Merchant Center',
             step2_desc: 'Connectez votre Google Merchant Center via notre API sécurisée et validez le passage vers le CSS Lynq.',
             step3_title: 'Economies Immédiates',
