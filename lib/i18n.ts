@@ -120,7 +120,7 @@ export const translations = {
             benefit2_title: 'Zéro Interruption',
             benefit2_desc: 'Aucune campagne à recréer. Tout continue de tourner comme avant, sans coupure, sans perte d\'historique, juste moins cher.',
             benefit3_title: 'Liberté Totale',
-            benefit3_desc: 'Satisfait ou remboursé ? Mieux : vous pouvez revenir au CSS Google en 1 clic, c\'est instantané. Aucun risque, que du bonus.',
+            benefit3_desc: 'Vous pouvez revenir au CSS Google en 1 clic, c\'est instantané. Aucun risque, que du bonus.',
             benefit4_title: 'Expertise & Support Dédié',
             benefit4_desc: 'En rejoignant Lynq, vous bénéficiez d\'un audit mensuel de vos flux produits par nos experts Shopping. Nous ne nous contentons pas de réduire vos coûts, nous optimisons votre visibilité pour maximiser votre ROAS.',
             steps_title: 'Une mise en place simple, en 3 étapes',
