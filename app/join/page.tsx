@@ -54,11 +54,12 @@ export default async function JoinPage({ searchParams }: Props) {
                         </h2>
                     </div>
 
-                    <div className="grid gap-8 lg:grid-cols-3">
+                    <div className="grid gap-8 md:grid-cols-2">
                         {[
                             { title: t.join.benefit1_title, desc: t.join.benefit1_desc, icon: '🚀' },
                             { title: t.join.benefit2_title, desc: t.join.benefit2_desc, icon: '🛡️' },
                             { title: t.join.benefit3_title, desc: t.join.benefit3_desc, icon: '📊' },
+                            { title: t.join.benefit4_title, desc: t.join.benefit4_desc, icon: '🎧' },
                         ].map((benefit, idx) => (
                             <div key={idx} className="group relative rounded-3xl border border-zinc-100 bg-white p-10 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2 dark:border-zinc-800 dark:bg-zinc-900/50">
                                 <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-50 text-3xl shadow-sm group-hover:scale-110 transition-transform dark:bg-zinc-800">
