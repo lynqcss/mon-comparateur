@@ -290,7 +290,24 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
       <div className="grid gap-8 md:grid-cols-[240px_1fr]">
         {/* Sidebar Filters */}
-        <aside className="space-y-8">
+        {/* Mobile Filter Toggle */}
+        <input type="checkbox" id="mobile-filter-toggle" className="peer hidden" />
+        <label
+          htmlFor="mobile-filter-toggle"
+          className="md:hidden flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 font-bold text-zinc-900 shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white"
+        >
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <span>{t.products.filter_button || 'Filtres'}</span>
+          </div>
+          <svg className="h-5 w-5 transition-transform peer-checked:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </label>
+
+        <aside className="hidden peer-checked:block md:block space-y-8 mt-4 md:mt-0">
           <div>
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.categories}</h3>
             <div className="space-y-1">

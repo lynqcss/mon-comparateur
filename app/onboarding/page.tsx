@@ -112,12 +112,12 @@ function OnboardingContent() {
             </header>
 
             {/* Progress Bar */}
-            <div className="mx-auto w-full max-w-2xl px-6 pt-12">
+            <div className="mx-auto w-full max-w-2xl px-4 sm:px-6 pt-8 sm:pt-12">
                 <div className="flex items-center justify-between">
                     {steps.map((step, idx) => (
-                        <div key={step.key} className="flex items-center gap-3">
+                        <div key={step.key} className="flex items-center gap-1.5 sm:gap-3">
                             <div
-                                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all ${idx <= stepIndex
+                                className={`flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-xs sm:text-sm font-bold transition-all ${idx <= stepIndex
                                     ? 'bg-zinc-900 text-white shadow-lg'
                                     : 'bg-zinc-100 text-zinc-400'
                                     }`}
@@ -125,14 +125,20 @@ function OnboardingContent() {
                                 {idx < stepIndex ? '✓' : step.num}
                             </div>
                             <span
-                                className={`text-sm font-bold whitespace-nowrap ${idx <= stepIndex ? 'text-zinc-900' : 'text-zinc-400'
+                                className={`hidden sm:block text-sm font-bold whitespace-nowrap ${idx <= stepIndex ? 'text-zinc-900' : 'text-zinc-400'
                                     }`}
                             >
                                 {step.label}
                             </span>
+                            <span
+                                className={`sm:hidden text-[10px] font-bold whitespace-nowrap ${idx <= stepIndex ? 'text-zinc-900' : 'text-zinc-400'
+                                    }`}
+                            >
+                                {idx === stepIndex ? step.label : ''}
+                            </span>
                             {idx < steps.length - 1 && (
                                 <div
-                                    className={`mx-4 h-px w-16 ${idx < stepIndex ? 'bg-zinc-900' : 'bg-zinc-200'
+                                    className={`mx-1 sm:mx-4 h-px w-6 sm:w-16 shrink-0 ${idx < stepIndex ? 'bg-zinc-900' : 'bg-zinc-200'
                                         }`}
                                 />
                             )}

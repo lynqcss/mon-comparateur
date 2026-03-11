@@ -18,7 +18,7 @@ export default function Footer() {
         <footer className="border-t border-zinc-200 bg-white py-12 dark:border-zinc-800 dark:bg-zinc-950">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="grid gap-8 md:grid-cols-4">
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                         <div className="flex items-center gap-2 mb-4">
                             <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
                                 <span className="text-sm font-bold italic">L</span>

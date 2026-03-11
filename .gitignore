@@ -42,3 +42,5 @@ next-env.d.ts
 
 # Google Cloud service account
 config/service-account.json
+
+.vercel
