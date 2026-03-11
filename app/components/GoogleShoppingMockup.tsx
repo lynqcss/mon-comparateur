@@ -5,31 +5,31 @@ import React from 'react'
 export default function GoogleShoppingMockup() {
     const ads = [
         {
-            title: 'Perceuse visseuse 18V',
-            price: '109,99 €',
-            merchant: 'bricopro.fr',
+            title: 'Machine à Café Expresso Broyeur Philips',
+            price: '349,99 €',
+            merchant: 'boulanger.com',
             shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1504148455328-497c5ef215d0?q=80&w=300&auto=format&fit=crop'
+            image: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?q=80&w=300&auto=format&fit=crop'
         },
         {
-            title: 'Pack 2 batteries Li-Ion',
-            price: '89,00 €',
-            merchant: 'masteroutils.com',
+            title: 'Cafetière Filtre Programmable Moulinex',
+            price: '49,99 €',
+            merchant: 'darty.com',
             shipping: '+ 4,99 € de frais',
-            image: 'https://images.unsplash.com/photo-1555854816-6aa6143c7270?q=80&w=300&auto=format&fit=crop'
+            image: 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=300&auto=format&fit=crop'
         },
         {
-            title: 'Perceuse à percussion',
-            price: '159,00 €',
-            oldPrice: '179 €',
-            merchant: 'manomano.fr',
+            title: 'Machine à Café Automatique Delonghi Magnifica S',
+            price: '299,00 €',
+            oldPrice: '329 €',
+            merchant: 'amazon.fr',
             shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1513694490325-24d193d80634?q=80&w=300&auto=format&fit=crop'
+            image: 'https://images.unsplash.com/photo-1520005856417-66a9d9494bd3?q=80&w=300&auto=format&fit=crop'
         }
     ]
 
     return (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="w-full max-w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl overflow-x-hidden">
             {/* Search Header Mockup */}
             <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-4">
                 <div className="flex gap-1.5">
@@ -38,7 +38,7 @@ export default function GoogleShoppingMockup() {
                     <div className="w-3 h-3 rounded-full bg-green-400" />
                 </div>
                 <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-8 flex items-center px-4">
-                    <div className="text-xs text-zinc-400 font-medium">google.com/search?q=perceuse+visseuse</div>
+                    <div className="text-xs text-zinc-400 font-medium truncate">google.com/search?q=machine+à+café</div>
                 </div>
             </div>
 
@@ -50,10 +50,10 @@ export default function GoogleShoppingMockup() {
                     <span className="text-zinc-500 italic">Boosté par Lynq CSS</span>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
                     {ads.map((ad, idx) => (
-                        <div key={idx} className="min-w-[180px] w-[180px] flex flex-col rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950">
-                            <div className="aspect-square bg-white p-4">
+                        <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
+                            <div className="aspect-square bg-white p-3 sm:p-4">
                                 <img src={ad.image} alt="" className="w-full h-full object-contain" />
                             </div>
                             <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1">

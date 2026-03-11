@@ -86,21 +86,21 @@ export default async function JoinPage({ searchParams }: Props) {
                                     { title: t.join.step2_title, desc: t.join.step2_desc, num: '02' },
                                     { title: t.join.step3_title, desc: t.join.step3_desc, num: '03' },
                                 ].map((step, idx) => (
-                                    <div key={idx} className="flex gap-6">
-                                        <div className="text-4xl font-black text-zinc-100 dark:text-zinc-800 select-none">
+                                    <div key={idx} className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                        <div className="text-4xl font-black text-zinc-100 dark:text-zinc-800 select-none shrink-0 border-b-2 sm:border-b-0 border-zinc-100 dark:border-zinc-800 pb-2 sm:pb-0 w-fit">
                                             {step.num}
                                         </div>
                                         <div>
-                                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{step.title}</h3>
-                                            <p className="text-zinc-500 dark:text-zinc-400 font-medium">{step.desc}</p>
+                                            <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white mb-2">{step.title}</h3>
+                                            <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 font-medium break-words leading-relaxed">{step.desc}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div className="relative">
+                        <div className="relative w-full overflow-hidden sm:overflow-visible">
                             <div className="absolute inset-0 bg-gradient-to-tr from-zinc-200/50 to-transparent rounded-full blur-3xl -z-10" />
-                            <div className="scale-90 lg:scale-100 origin-right transition-transform duration-500 hover:scale-[1.02]">
+                            <div className="origin-center lg:origin-right transition-transform duration-500 hover:scale-[1.02] w-full max-w-full overflow-hidden">
                                 <GoogleShoppingMockup />
                             </div>
                         </div>
