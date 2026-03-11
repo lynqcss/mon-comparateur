@@ -61,51 +61,53 @@ export default function GoogleShoppingMockup() {
                     <span className="text-zinc-500 italic">Boosté par Lynq CSS</span>
                 </div>
 
-                <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
-                    {ads.map((ad, idx) => (
-                        <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
-                            <div className="aspect-square bg-white flex items-center justify-center p-4">
-                                <img src={ad.image} alt="" className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
-                            </div>
-                            <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1 border-t border-zinc-100 dark:border-zinc-800">
-                                <h4 className="text-[11px] font-medium leading-normal text-zinc-700 dark:text-zinc-300 line-clamp-2 h-8">
-                                    {ad.title}
-                                </h4>
-                                <div className="mt-2 flex items-baseline gap-1.5">
-                                    <span className="text-sm font-bold text-zinc-900 dark:text-white">{ad.price}</span>
-                                    {ad.oldPrice && <span className="text-[10px] text-zinc-400 line-through">{ad.oldPrice}</span>}
+                <div className="relative group w-full">
+                    <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
+                        {ads.map((ad, idx) => (
+                            <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
+                                <div className="aspect-square bg-white flex items-center justify-center p-4">
+                                    <img src={ad.image} alt="" className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
                                 </div>
-                                <div className="mt-1 text-[10px] text-zinc-500 truncate">{ad.merchant}</div>
-                                <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
-                                    <div className="flex text-amber-400">
-                                        {[...Array(5)].map((_, i) => (
-                                            <svg key={i} className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                        ))}
+                                <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1 border-t border-zinc-100 dark:border-zinc-800">
+                                    <h4 className="text-[11px] font-medium leading-normal text-zinc-700 dark:text-zinc-300 line-clamp-2 h-8">
+                                        {ad.title}
+                                    </h4>
+                                    <div className="mt-2 flex items-baseline gap-1.5">
+                                        <span className="text-sm font-bold text-zinc-900 dark:text-white">{ad.price}</span>
+                                        {ad.oldPrice && <span className="text-[10px] text-zinc-400 line-through">{ad.oldPrice}</span>}
                                     </div>
-                                    <span>({ad.reviews}+)</span>
-                                </div>
-                                <div className="mt-0.5 text-[10px] text-zinc-400">{ad.shipping}</div>
+                                    <div className="mt-1 text-[10px] text-zinc-500 truncate">{ad.merchant}</div>
+                                    <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                                        <div className="flex text-amber-400">
+                                            {[...Array(5)].map((_, i) => (
+                                                <svg key={i} className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            ))}
+                                        </div>
+                                        <span>({ad.reviews}+)</span>
+                                    </div>
+                                    <div className="mt-0.5 text-[10px] text-zinc-400">{ad.shipping}</div>
 
-                                <div className="mt-auto pt-3 flex flex-col gap-2">
-                                    <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8]">
-                                        Par Lynq
-                                    </div>
-                                    <div className="md:hidden text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
-                                        Voir l'offre
+                                    <div className="mt-auto pt-3 flex flex-col gap-2">
+                                        <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8]">
+                                            Par Lynq
+                                        </div>
+                                        <div className="md:hidden text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
+                                            Voir l'offre
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
 
                     {/* Mockup Arrow */}
-                    <div className="flex-none flex items-center pl-4 pr-2">
+                    <div className="absolute right-0 top-[40%] md:translate-x-1/2 flex items-center justify-center z-10 hidden sm:flex pointer-events-none">
                         <button
                             onClick={scrollRight}
-                            className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-all active:scale-95 focus:outline-none cursor-pointer"
+                            className="pointer-events-auto w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 bg-white dark:bg-zinc-800 shadow-md transition-all active:scale-95 focus:outline-none cursor-pointer"
                         >
                             <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                         </button>
                     </div>
