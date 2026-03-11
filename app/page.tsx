@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslation } from "@/lib/i18n";
+import GoogleShoppingMockup from "./components/GoogleShoppingMockup";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -133,13 +134,8 @@ export default async function Home({ searchParams }: HomeProps) {
                 </div>
               </div>
             </div>
-            <div className="relative aspect-video overflow-hidden rounded-3xl border border-zinc-100 bg-zinc-100 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-zinc-200 to-zinc-400 dark:from-zinc-800 dark:to-zinc-950">
-                <div className="text-center p-8 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-                  <span className="text-xs font-black uppercase tracking-widest text-white/60">{t.home.partner_view}</span>
-                  <h3 className="mt-2 text-2xl font-bold text-white">{t.home.dashboard}</h3>
-                </div>
-              </div>
+            <div className="relative w-full overflow-hidden sm:overflow-visible scale-90 lg:scale-100 origin-center lg:origin-left mt-8 lg:mt-0">
+              <GoogleShoppingMockup />
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import Footer from './components/Footer'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Lynq | Premium Comparison Shopping',
+  title: 'Lynq | Premium CSS Comparison Shopping',
   description: 'Lynq Comparison Shopping Service - Compare prices and find the best deals from top merchants.',
 }
 

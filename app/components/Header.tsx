@@ -27,9 +27,7 @@ export default function Header() {
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                 <div className="flex items-center gap-8">
                     <Link href={buildUrl('/')} className="group flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white transition-all group-hover:bg-zinc-800 dark:bg-white dark:text-zinc-900">
-                            <span className="text-xl font-bold italic">L</span>
-                        </div>
+                        <img src="/lynq-logo.svg" alt="Lynq Logo" className="h-8 w-auto text-zinc-900 dark:invert transition-transform group-hover:scale-105" />
                         <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
                             Lynq
                         </span>

@@ -265,6 +265,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link
+            href="/products"
+            className="flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-900"
+          >
+            Réinitialiser les filtres
+          </Link>
           {/* Sort Dropdown (Client Component) */}
           <SortDropdown />
 

@@ -5,26 +5,26 @@ import React from 'react'
 export default function GoogleShoppingMockup() {
     const ads = [
         {
-            title: 'Machine à Café Expresso Broyeur Philips Série 2200',
-            price: '349,99 €',
+            title: 'Apple MacBook Pro M3 14" Noir Sidéral',
+            price: '1 999,00 €',
             merchant: 'boulanger.com',
             shipping: 'Livraison gratuite',
-            image: 'https://m.media-amazon.com/images/I/81B+wLcdSCL._AC_SX300_.jpg'
+            image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=300&auto=format&fit=crop'
         },
         {
-            title: 'Machine Expresso Automatique Krups Essential',
-            price: '299,90 €',
+            title: 'Apple MacBook Air M2 13" Minuit 256Go',
+            price: '1 149,99 €',
             merchant: 'darty.com',
             shipping: '+ 4,99 € de frais',
-            image: 'https://m.media-amazon.com/images/I/71N-E0VnNQL._AC_SX300_.jpg'
+            image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=300&auto=format&fit=crop'
         },
         {
-            title: 'Machine à Café Automatique Delonghi Magnifica S',
-            price: '299,00 €',
-            oldPrice: '329 €',
+            title: 'MacBook Air M1 13" Gris Sidéral',
+            price: '939,00 €',
+            oldPrice: '1199 €',
             merchant: 'amazon.fr',
             shipping: 'Livraison gratuite',
-            image: 'https://m.media-amazon.com/images/I/71K7Q4FpguL._AC_SX300_.jpg'
+            image: 'https://images.unsplash.com/photo-1531297121268-c11f456fb439?q=80&w=300&auto=format&fit=crop'
         }
     ]
 
@@ -38,7 +38,7 @@ export default function GoogleShoppingMockup() {
                     <div className="w-3 h-3 rounded-full bg-green-400" />
                 </div>
                 <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-8 flex items-center px-4">
-                    <div className="text-xs text-zinc-400 font-medium truncate">google.com/search?q=machine+à+café</div>
+                    <div className="text-xs text-zinc-400 font-medium truncate">google.com/search?q=macbook</div>
                 </div>
             </div>
 
