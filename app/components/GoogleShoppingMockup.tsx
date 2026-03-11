@@ -5,18 +5,18 @@ import React from 'react'
 export default function GoogleShoppingMockup() {
     const ads = [
         {
-            title: 'Machine à Café Expresso Broyeur Philips',
+            title: 'Machine à Café Expresso Broyeur Philips Série 2200',
             price: '349,99 €',
             merchant: 'boulanger.com',
             shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?q=80&w=300&auto=format&fit=crop'
+            image: 'https://m.media-amazon.com/images/I/81B+wLcdSCL._AC_SX300_.jpg'
         },
         {
-            title: 'Cafetière Filtre Programmable Moulinex',
-            price: '49,99 €',
+            title: 'Machine Expresso Automatique Krups Essential',
+            price: '299,90 €',
             merchant: 'darty.com',
             shipping: '+ 4,99 € de frais',
-            image: 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=300&auto=format&fit=crop'
+            image: 'https://m.media-amazon.com/images/I/71N-E0VnNQL._AC_SX300_.jpg'
         },
         {
             title: 'Machine à Café Automatique Delonghi Magnifica S',
@@ -24,7 +24,7 @@ export default function GoogleShoppingMockup() {
             oldPrice: '329 €',
             merchant: 'amazon.fr',
             shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1520005856417-66a9d9494bd3?q=80&w=300&auto=format&fit=crop'
+            image: 'https://m.media-amazon.com/images/I/71K7Q4FpguL._AC_SX300_.jpg'
         }
     ]
 
@@ -52,11 +52,11 @@ export default function GoogleShoppingMockup() {
 
                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
                     {ads.map((ad, idx) => (
-                        <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
-                            <div className="aspect-square bg-white p-3 sm:p-4">
-                                <img src={ad.image} alt="" className="w-full h-full object-contain" />
+                        <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
+                            <div className="aspect-square bg-white flex items-center justify-center p-3 sm:p-5">
+                                <img src={ad.image} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
                             </div>
-                            <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1">
+                            <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1 border-t border-zinc-100 dark:border-zinc-800">
                                 <h4 className="text-[11px] font-medium leading-normal text-zinc-700 dark:text-zinc-300 line-clamp-2 h-8">
                                     {ad.title}
                                 </h4>
@@ -67,12 +67,12 @@ export default function GoogleShoppingMockup() {
                                 <div className="mt-1 text-[10px] text-zinc-500 truncate">{ad.merchant}</div>
                                 <div className="text-[10px] text-zinc-400">{ad.shipping}</div>
 
-                                <div className="mt-auto pt-3 border-t border-zinc-50 dark:border-zinc-800">
-                                    <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                                        Par Lynq
-                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                <div className="mt-auto pt-3 flex flex-col gap-2">
+                                    <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8]">
+                                        Par Lynq CSS
+                                    </div>
+                                    <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
+                                        Voir l'offre
                                     </div>
                                 </div>
                             </div>
