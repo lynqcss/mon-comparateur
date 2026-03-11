@@ -98,9 +98,9 @@ export default async function JoinPage({ searchParams }: Props) {
                                 ))}
                             </div>
                         </div>
-                        <div className="relative w-full overflow-hidden sm:overflow-visible">
+                        <div className="relative w-full sm:overflow-visible">
                             <div className="absolute inset-0 bg-gradient-to-tr from-zinc-200/50 to-transparent rounded-full blur-3xl -z-10" />
-                            <div className="origin-center lg:origin-right transition-transform duration-500 hover:scale-[1.02] w-full max-w-full overflow-hidden">
+                            <div className="origin-center lg:origin-right transition-transform duration-500 hover:scale-[1.02] w-full max-w-full">
                                 <GoogleShoppingMockup />
                             </div>
                         </div>

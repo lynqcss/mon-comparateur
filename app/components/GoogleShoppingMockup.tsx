@@ -1,8 +1,16 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 
 export default function GoogleShoppingMockup() {
+    const scrollRef = useRef<HTMLDivElement>(null)
+
+    const scrollRight = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+        }
+    }
+
     const ads = [
         {
             title: 'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral...',
@@ -53,7 +61,7 @@ export default function GoogleShoppingMockup() {
                     <span className="text-zinc-500 italic">Boosté par Lynq CSS</span>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto pb-4 w-full" style={{ scrollSnapType: 'x mandatory' }}>
+                <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
                     {ads.map((ad, idx) => (
                         <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
                             <div className="aspect-square bg-white flex items-center justify-center p-4">
@@ -92,11 +100,14 @@ export default function GoogleShoppingMockup() {
 
                     {/* Mockup Arrow */}
                     <div className="flex-none flex items-center pl-4 pr-2">
-                        <div className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400 bg-white dark:bg-zinc-900 shadow-sm">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button
+                            onClick={scrollRight}
+                            className="w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-all active:scale-95 focus:outline-none cursor-pointer"
+                        >
+                            <svg className="w-4 h-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                             </svg>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -134,7 +134,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 </div>
               </div>
             </div>
-            <div className="relative w-full overflow-hidden sm:overflow-visible scale-90 lg:scale-100 origin-center lg:origin-left mt-8 lg:mt-0">
+            <div className="relative w-full overflow-hidden sm:overflow-visible scale-90 lg:scale-100 origin-center lg:origin-left mt-8 lg:mt-0 transition-transform duration-500 hover:scale-[1.02]">
               <GoogleShoppingMockup />
             </div>
           </div>
