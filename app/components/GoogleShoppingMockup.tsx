@@ -1,13 +1,26 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
 export default function GoogleShoppingMockup() {
     const scrollRef = useRef<HTMLDivElement>(null)
+    const [canScrollLeft, setCanScrollLeft] = useState(false)
+
+    const handleScroll = () => {
+        if (scrollRef.current) {
+            setCanScrollLeft(scrollRef.current.scrollLeft > 0)
+        }
+    }
 
     const scrollRight = () => {
         if (scrollRef.current) {
             scrollRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+        }
+    }
+
+    const scrollLeft = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollBy({ left: -300, behavior: 'smooth' });
         }
     }
 
@@ -62,7 +75,7 @@ export default function GoogleShoppingMockup() {
                 </div>
 
                 <div className="relative group w-full">
-                    <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
+                    <div ref={scrollRef} onScroll={handleScroll} className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
                         {ads.map((ad, idx) => (
                             <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
                                 <div className="aspect-square bg-white flex items-center justify-center p-4">
@@ -100,7 +113,21 @@ export default function GoogleShoppingMockup() {
                         ))}
                     </div>
 
-                    {/* Mockup Arrow */}
+                    {/* Left Mockup Arrow */}
+                    {canScrollLeft && (
+                        <div className="absolute left-0 top-[40%] md:-translate-x-1/2 flex items-center justify-center z-10 hidden sm:flex pointer-events-none">
+                            <button
+                                onClick={scrollLeft}
+                                className="pointer-events-auto w-8 h-8 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 bg-white dark:bg-zinc-800 shadow-md transition-all active:scale-95 focus:outline-none cursor-pointer"
+                            >
+                                <svg className="w-4 h-4 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Right Mockup Arrow */}
                     <div className="absolute right-0 top-[40%] md:translate-x-1/2 flex items-center justify-center z-10 hidden sm:flex pointer-events-none">
                         <button
                             onClick={scrollRight}
