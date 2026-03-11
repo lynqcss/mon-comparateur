@@ -5,11 +5,11 @@ import React from 'react'
 export default function GoogleShoppingMockup() {
     const ads = [
         {
-            title: 'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral - 24 Go / 512 Go',
+            title: 'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral...',
             price: '2 299,99 €',
             merchant: 'topachat.com',
             shipping: 'Livraison gratuite',
-            image: 'https://media.topachat.com/media/nx/00/00/00/06/33/27/00000006332766-00000006450682.jpg'
+            image: 'https://media.topachat.com/media/s400/673c6763958c922f7e7e5b30.jpg'
         },
         {
             title: 'Apple MacBook Air M4 15 pouces (2025) - Minuit - 16 Go',
