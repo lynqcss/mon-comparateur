@@ -5,26 +5,26 @@ import React from 'react'
 export default function GoogleShoppingMockup() {
     const ads = [
         {
-            title: 'Apple MacBook Pro M3 14" Noir Sidéral',
-            price: '1 999,00 €',
-            merchant: 'boulanger.com',
+            title: 'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral - 24 Go / 512 Go',
+            price: '2 299,99 €',
+            merchant: 'topachat.com',
             shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=300&auto=format&fit=crop'
+            image: 'https://media.topachat.com/media/nx/00/00/00/06/33/27/00000006332766-00000006450682.jpg'
         },
         {
-            title: 'Apple MacBook Air M2 13" Minuit 256Go',
+            title: 'Apple MacBook Air M4 15 pouces (2025) - Minuit - 16 Go',
+            price: '1 199,99 €',
+            merchant: 'topachat.com',
+            shipping: 'Livraison gratuite',
+            image: 'https://media.topachat.com/media/nx/00/00/00/06/66/60/00000006666060-00000006686377.jpg'
+        },
+        {
+            title: 'Apple MacBook Air M4 13 pouces (2025) - Bleu Ciel - 16 Go',
             price: '1 149,99 €',
-            merchant: 'darty.com',
+            oldPrice: '1249 €',
+            merchant: 'topachat.com',
             shipping: '+ 4,99 € de frais',
-            image: 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?q=80&w=300&auto=format&fit=crop'
-        },
-        {
-            title: 'MacBook Air M1 13" Gris Sidéral',
-            price: '939,00 €',
-            oldPrice: '1199 €',
-            merchant: 'amazon.fr',
-            shipping: 'Livraison gratuite',
-            image: 'https://images.unsplash.com/photo-1531297121268-c11f456fb439?q=80&w=300&auto=format&fit=crop'
+            image: 'https://media.topachat.com/media/nx/00/00/00/06/66/60/00000006666059-00000006686374.jpg'
         }
     ]
 
