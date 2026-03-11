@@ -53,8 +53,8 @@ export default function GoogleShoppingMockup() {
                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide w-full" style={{ scrollSnapType: 'x mandatory' }}>
                     {ads.map((ad, idx) => (
                         <div key={idx} className="flex-none w-[140px] sm:w-[180px] flex flex-col rounded-[16px] border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-950" style={{ scrollSnapAlign: 'start' }}>
-                            <div className="aspect-square bg-white flex items-center justify-center p-3 sm:p-5">
-                                <img src={ad.image} alt="" className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                            <div className="aspect-square bg-white flex items-center justify-center p-2">
+                                <img src={ad.image} alt="" className="w-full h-full object-contain mix-blend-multiply" />
                             </div>
                             <div className="p-3 bg-white dark:bg-zinc-950 flex flex-col flex-1 border-t border-zinc-100 dark:border-zinc-800">
                                 <h4 className="text-[11px] font-medium leading-normal text-zinc-700 dark:text-zinc-300 line-clamp-2 h-8">
@@ -69,9 +69,9 @@ export default function GoogleShoppingMockup() {
 
                                 <div className="mt-auto pt-3 flex flex-col gap-2">
                                     <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8]">
-                                        Par Lynq CSS
+                                        Par Lynq
                                     </div>
-                                    <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
+                                    <div className="md:hidden text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
                                         Voir l'offre
                                     </div>
                                 </div>

@@ -31,7 +31,7 @@ export default function Header() {
                             <span className="text-xl font-bold italic">L</span>
                         </div>
                         <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                            Lynq<span className="text-zinc-400">CSS</span>
+                            Lynq
                         </span>
                     </Link>
 
