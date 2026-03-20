@@ -399,7 +399,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {productList.map((p) => (
                 <article key={p.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-all hover:shadow-2xl hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/50">
-                  <Link href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
+                  <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
                     <div className="aspect-square p-4 transition-transform duration-500 group-hover:scale-110">
                       {p.image_link ? (
                         <img src={p.image_link} alt={p.title || ''} className="h-full w-full object-contain" loading="lazy" />
@@ -417,12 +417,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         </span>
                       )}
                     </div>
-                    <Link href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="mb-4 line-clamp-2 text-sm font-semibold leading-relaxed text-zinc-900 transition-colors hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300">
+                    <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="mb-4 line-clamp-2 text-sm font-semibold leading-relaxed text-zinc-900 transition-colors hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300">
                       {p.title}
                     </Link>
                     <div className="mt-auto flex items-center justify-between">
                       <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(p.price_value, p.price_currency)}</span>
-                      <Link href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
+                      <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>
@@ -437,7 +437,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               <div className="mb-4 text-4xl">🔎</div>
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.products.no_results}</h3>
               <p className="mt-2 text-sm text-zinc-500">{t.products.no_results_p}</p>
-              <Link href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, merchants: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <Link prefetch={false} href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, merchants: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
                 {t.products.reset}
               </Link>
             </div>

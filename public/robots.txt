@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /products
+Disallow: /api/
+Disallow: /admin/
+Disallow: /onboarding/
