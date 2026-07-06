@@ -25,11 +25,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (error) {
-        return NextResponse.redirect(new URL('/onboarding?error=consent_denied', req.url))
+        return NextResponse.redirect(new URL('/onboarding/auto?error=consent_denied', req.url))
     }
 
     if (!code) {
-        return NextResponse.redirect(new URL('/onboarding?error=no_code', req.url))
+        return NextResponse.redirect(new URL('/onboarding/auto?error=no_code', req.url))
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID!
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
         if (!tokenResponse.ok) {
             console.error('Token exchange error:', tokenData)
-            return NextResponse.redirect(new URL('/onboarding?error=token_exchange', req.url))
+            return NextResponse.redirect(new URL('/onboarding/auto?error=token_exchange', req.url))
         }
 
         const { access_token, refresh_token, expires_in } = tokenData
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 
         if (insertError || !session) {
             console.error('Error saving session:', insertError)
-            return NextResponse.redirect(new URL('/onboarding?error=db_error', req.url))
+            return NextResponse.redirect(new URL('/onboarding/auto?error=db_error', req.url))
         }
 
         // If this is a CMS headless integration, return the token explicitly
@@ -102,6 +102,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(redirectUrl)
     } catch (err) {
         console.error('OAuth callback error:', err)
-        return NextResponse.redirect(new URL('/onboarding?error=unknown', req.url))
+        return NextResponse.redirect(new URL('/onboarding/auto?error=unknown', req.url))
     }
 }

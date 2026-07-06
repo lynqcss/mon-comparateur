@@ -1,5 +1,3 @@
-import { getTranslation } from '@/lib/i18n'
-
 type Props = {
     searchParams: Promise<{ lang?: string }>
 }
@@ -19,15 +17,15 @@ export default async function LegalPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">1. {isEn ? 'SITE PUBLISHER' : 'ÉDITEUR DU SITE'}</h2>
                     <p>
                         {isEn
-                            ? 'The Lynq CSS website is published by the company Lynq CSS, specialized in price comparison services.'
-                            : 'Le site Lynq CSS est édité par la société Lynq CSS, spécialisée dans les services de comparaison de prix.'}
+                            ? 'The Lynq CSS website is published by Clément RODE, sole trader (entrepreneur individuel), operating under the trade name “Lynq CSS”, a price comparison service.'
+                            : 'Le site Lynq CSS est édité par Clément RODE, entrepreneur individuel, exerçant sous le nom commercial « Lynq CSS », service de comparaison de prix.'}
                     </p>
                     <ul className="list-none pl-0 space-y-2 mt-4">
-                        <li><strong>{isEn ? 'Legal Form:' : 'Forme juridique :'}</strong> {isEn ? '[Ex: SAS / SARL] with a capital of [Amount] €' : '[Ex: SAS / SARL] au capital de [Montant] €'}</li>
-                        <li><strong>{isEn ? 'Headquarters:' : 'Siège social :'}</strong> 123 Avenue des Champs-Élysées, 75008 Paris</li>
-                        <li><strong>SIREN :</strong> [Numéro SIREN à compléter]</li>
-                        <li><strong>RCS :</strong> [Ville, ex: Paris]</li>
-                        <li><strong>{isEn ? 'Intracommunity VAT:' : 'TVA Intracommunautaire :'}</strong> [Numéro de TVA]</li>
+                        <li><strong>{isEn ? 'Legal Form:' : 'Forme juridique :'}</strong> {isEn ? 'Sole trader (entreprise individuelle) — no share capital' : 'Entreprise individuelle — sans capital social'}</li>
+                        <li><strong>{isEn ? 'Head office:' : 'Siège social :'}</strong> 9 cours du Médoc, 33300 Bordeaux, France</li>
+                        <li><strong>SIREN :</strong> 921 109 138</li>
+                        <li><strong>{isEn ? 'Registration:' : 'Immatriculation :'}</strong> {isEn ? 'French National Business Register (RNE)' : 'Registre National des Entreprises (RNE)'}</li>
+                        <li><strong>{isEn ? 'VAT:' : 'TVA :'}</strong> {isEn ? 'VAT not applicable, art. 293 B of the French General Tax Code (CGI)' : 'TVA non applicable, art. 293 B du CGI'}</li>
                         <li><strong>Email :</strong> contact@lynq-css.com</li>
                     </ul>
                 </section>
@@ -36,8 +34,8 @@ export default async function LegalPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">2. {isEn ? 'PUBLICATION DIRECTOR' : 'DIRECTEUR DE LA PUBLICATION'}</h2>
                     <p>
                         {isEn
-                            ? 'The publication director of the site is Clement, in his capacity as manager.'
-                            : 'Le directeur de la publication du site est Clement, en sa qualité de dirigeant.'}
+                            ? 'The publication director of the site is Clément RODE, in his capacity as sole trader.'
+                            : 'Le directeur de la publication du site est Clément RODE, en sa qualité d’entrepreneur individuel.'}
                     </p>
                 </section>
 
@@ -58,8 +56,8 @@ export default async function LegalPage({ searchParams }: Props) {
                     <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">4. {isEn ? 'INTELLECTUAL PROPERTY' : 'PROPRIÉTÉ INTELLECTUELLE'}</h2>
                     <p>
                         {isEn
-                            ? 'All elements constituting the site (logos, graphics, texts) are the exclusive property of Lynq CSS. Any reproduction or representation, total or partial, of the site or one of its elements, without the express authorization of the publisher, is prohibited.'
-                            : 'L’ensemble des éléments constituant le site (logos, graphismes, textes) est la propriété exclusive de Lynq CSS. Toute reproduction ou représentation, totale ou partielle, du site ou de l’un de ses éléments, sans l’autorisation expresse de l\'éditeur, est interdite.'}
+                            ? 'All elements constituting the site (logos, graphics, texts) are the exclusive property of Clément RODE (Lynq CSS). Any reproduction or representation, total or partial, of the site or one of its elements, without the express authorization of the publisher, is prohibited.'
+                            : 'L’ensemble des éléments constituant le site (logos, graphismes, textes) est la propriété exclusive de Clément RODE (Lynq CSS). Toute reproduction ou représentation, totale ou partielle, du site ou de l’un de ses éléments, sans l’autorisation expresse de l\'éditeur, est interdite.'}
                     </p>
                     <p className="mt-4">
                         {isEn

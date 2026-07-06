@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import ExpandableDescription from '@/app/components/ExpandableDescription'
 import { getTranslation } from '@/lib/i18n'
+import { formatPrice } from '@/lib/utils'
 
 type ProductPageProps = {
   params: Promise<{ id: string }>
@@ -31,12 +32,6 @@ type ProductRow = {
   country_code: string | null
   shipping_price: number | null
   merchants: { name: string | null }[] | { name: string | null } | null
-}
-
-const formatPrice = (value: number | null, currency: string | null) => {
-  if (value == null) return null
-  const cur = currency || 'EUR'
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur }).format(value)
 }
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {

@@ -1,5 +1,3 @@
-import { getTranslation } from '@/lib/i18n'
-
 type Props = {
     searchParams: Promise<{ lang?: string }>
 }

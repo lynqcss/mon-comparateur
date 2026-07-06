@@ -1,6 +1,7 @@
 // app/category/[id]/page.tsx
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
+import { formatPrice } from '@/lib/utils'
 
 type CategoryPageProps = {
   params: Promise<{ id: string }>
@@ -16,12 +17,6 @@ type ProductRow = {
   image_link: string | null
   price_value: number | null
   price_currency: string | null
-}
-
-const formatPrice = (value: number | null, currency: string | null) => {
-  if (value == null) return null
-  const cur = currency || 'EUR'
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur }).format(value)
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {

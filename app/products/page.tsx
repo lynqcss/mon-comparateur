@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import SortDropdown from '@/app/components/SortDropdown'
 import { getTranslation } from '@/lib/i18n'
+import { formatPrice } from '@/lib/utils'
 
 const PAGE_SIZE = 36
 
@@ -72,12 +73,6 @@ const ROOT_ICONS: Record<string, string> = {
   'Vêtements et accessoires': '👕',
   'Armes': '🔫',
   'Autres': '❓'
-}
-
-function formatPrice(value: number | null, currency: string | null) {
-  if (value == null) return null
-  const cur = currency || 'EUR'
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: cur }).format(value)
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getTranslation } from '@/lib/i18n'
 import GoogleShoppingMockup from '@/app/components/GoogleShoppingMockup'
+import AuctionMechanism from '@/app/components/AuctionMechanism'
 import ExpandableFAQ from '@/app/components/ExpandableFAQ'
 
 type Props = {
@@ -8,16 +9,9 @@ type Props = {
 }
 
 export default async function JoinPage({ searchParams }: Props) {
-    const { lang, country } = await searchParams
+    const { lang } = await searchParams
     const selectedLang = lang || 'fr'
     const t = getTranslation(selectedLang)
-
-    const buildUrl = (path: string) => {
-        const sp = new URLSearchParams()
-        if (lang) sp.set('lang', lang)
-        if (country) sp.set('country', country)
-        return `${path}?${sp.toString()}`
-    }
 
     return (
         <div className="flex flex-col bg-white dark:bg-zinc-950">
@@ -73,6 +67,13 @@ export default async function JoinPage({ searchParams }: Props) {
                 </div>
             </section>
 
+            {/* Auction Mechanism Section */}
+            <section className="py-24 sm:py-32">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                    <AuctionMechanism lang={selectedLang} />
+                </div>
+            </section>
+
             {/* Steps Section */}
             <section className="py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -98,6 +99,11 @@ export default async function JoinPage({ searchParams }: Props) {
                                     </div>
                                 ))}
                             </div>
+                            <div className="mt-12 flex justify-center">
+                                <Link href="/onboarding" className="rounded-full bg-zinc-900 px-8 py-4 text-base font-bold text-white shadow-2xl transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 dark:bg-white dark:text-zinc-900">
+                                    {t.join.steps_cta}
+                                </Link>
+                            </div>
                         </div>
                         <div className="relative w-full sm:overflow-visible">
                             <div className="absolute inset-0 bg-gradient-to-tr from-zinc-200/50 to-transparent rounded-full blur-3xl -z-10" />
@@ -111,13 +117,20 @@ export default async function JoinPage({ searchParams }: Props) {
 
             {/* FAQ Section */}
             <section className="py-24 bg-zinc-50/30 dark:bg-zinc-900/10">
-                <div className="mx-auto max-w-3xl px-6 lg:px-8">
-                    <h2 className="text-center text-3xl font-black mb-16 dark:text-white uppercase tracking-widest">{t.join.faq_title}</h2>
-                    <div className="space-y-8">
+                <div className="mx-auto max-w-5xl px-6 lg:px-8">
+                    <h2 className="text-center text-3xl font-black mb-12 dark:text-white uppercase tracking-widest">{t.join.faq_title}</h2>
+                    <div className="grid gap-4 md:grid-cols-2">
                         {[
                             { q: t.join.faq_q1, a: t.join.faq_a1 },
                             { q: t.join.faq_q2, a: t.join.faq_a2 },
                             { q: t.join.faq_q3, a: t.join.faq_a3 },
+                            { q: t.join.faq_q4, a: t.join.faq_a4 },
+                            { q: t.join.faq_q5, a: t.join.faq_a5 },
+                            { q: t.join.faq_q6, a: t.join.faq_a6 },
+                            { q: t.join.faq_q7, a: t.join.faq_a7 },
+                            { q: t.join.faq_q8, a: t.join.faq_a8 },
+                            { q: t.join.faq_q9, a: t.join.faq_a9 },
+                            { q: t.join.faq_q10, a: t.join.faq_a10 },
                         ].map((item, idx) => (
                             <ExpandableFAQ key={idx} question={item.q} answer={item.a} />
                         ))}

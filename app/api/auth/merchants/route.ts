@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { getValidAccessToken, fetchMerchantAccounts } from '@/lib/tokenRefresh'
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
@@ -9,7 +10,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Session ID required' }, { status: 400 })
     }
 
-    // Retrieve the session with tokens
     const { data: session, error: sessionError } = await supabase
         .from('onboarding_sessions')
         .select('*')
@@ -20,64 +20,20 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Session not found' }, { status: 404 })
     }
 
-    let accessToken = session.access_token
-
-    // Check if token is expired, refresh if needed
-    if (new Date(session.token_expires_at) < new Date()) {
-        if (!session.refresh_token) {
-            return NextResponse.json({ error: 'Token expired and no refresh token' }, { status: 401 })
-        }
-
-        const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                client_id: process.env.GOOGLE_CLIENT_ID!,
-                client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-                refresh_token: session.refresh_token,
-                grant_type: 'refresh_token',
-            }),
-        })
-
-        const refreshData = await refreshResponse.json()
-        if (!refreshResponse.ok) {
-            return NextResponse.json({ error: 'Token refresh failed' }, { status: 401 })
-        }
-
-        accessToken = refreshData.access_token
-        const newExpiry = new Date(Date.now() + refreshData.expires_in * 1000).toISOString()
-
-        await supabase
-            .from('onboarding_sessions')
-            .update({ access_token: accessToken, token_expires_at: newExpiry })
-            .eq('id', sessionId)
+    const tokenResult = await getValidAccessToken(session)
+    if ('error' in tokenResult) {
+        return NextResponse.json({ error: tokenResult.error }, { status: tokenResult.status })
     }
 
-    // Call the Merchant Center API to list the user's accounts
     try {
-        const accountsResponse = await fetch(
-            'https://shoppingcontent.googleapis.com/content/v2.1/accounts/authinfo',
-            {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            }
-        )
-
-        const accountsData = await accountsResponse.json()
-
-        if (!accountsResponse.ok) {
-            console.error('Merchant API error:', accountsData)
-            return NextResponse.json({ error: 'Failed to fetch merchant accounts', details: accountsData }, { status: 500 })
+        const merchantResult = await fetchMerchantAccounts(tokenResult.accessToken)
+        if ('error' in merchantResult) {
+            return NextResponse.json({ error: merchantResult.error, details: merchantResult.details }, { status: 500 })
         }
-
-        // Extract the list of Merchant Center accounts the user has access to
-        const accounts = (accountsData.accountIdentifiers || []).map((acc: any) => ({
-            merchantId: acc.merchantId || acc.aggregatorId,
-            aggregatorId: acc.aggregatorId || null,
-        }))
 
         return NextResponse.json({
             email: session.google_email,
-            accounts,
+            accounts: merchantResult.accounts,
         })
     } catch (err: any) {
         console.error('Error fetching merchants:', err)
