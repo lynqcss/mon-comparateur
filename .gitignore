@@ -44,3 +44,14 @@ next-env.d.ts
 config/service-account.json
 
 .vercel
+
+# Claude Code local config
+.claude/
+
+# Personal / sensitive documents (never commit)
+signature.png
+Declaration_*
+Memo_*
+Checklist_*
+*.docx
+*.pdf
