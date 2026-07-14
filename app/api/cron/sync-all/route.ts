@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
-import { getGoogleMerchantClient } from '@/lib/googleClient'
 
 // This endpoint is called by Vercel Cron to sync all active merchants
 // Configure in vercel.json: every 12 hours

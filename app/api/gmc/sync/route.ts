@@ -1,42 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
-import { getGoogleMerchantClient } from '@/lib/googleClient'
+import {
+  listMerchantProductsPage,
+  type MerchantProduct,
+  type MerchantPrice,
+} from '@/lib/googleClient'
 
-function normalizeGoogleCategory(raw: any): {
+// Synchro CATALOGUE COMPLET via la Merchant API, par curseur auto-enchaîné.
+//
+// Contrainte Vercel Hobby : fonctions ~10-60s, cron 1x/jour. On ne charge donc
+// PAS tout le catalogue d'un coup : chaque invocation traite un lot de pages
+// dans un budget de temps (~45s), sauvegarde le pageToken (curseur) sur le
+// marchand, puis relance la suite (self-fetch best-effort). Le cron quotidien
+// et le bouton admin servent de reprise/fallback fiable.
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
+// Budget de temps par invocation (marge sous maxDuration=60s).
+const TIME_BUDGET_MS = 45_000
+const PAGE_SIZE = 1000
+
+// -------- Helpers ------------------------------------------------------------
+
+/** Prix Merchant API (micros) -> nombre décimal, ou null. */
+function priceFromMicros(p?: MerchantPrice): number | null {
+  if (!p?.amountMicros) return null
+  const n = Number(p.amountMicros)
+  return Number.isFinite(n) ? n / 1_000_000 : null
+}
+
+/** Normalise la date d'effet du prix soldé (Interval Merchant API ou string). */
+function normalizeSalePriceEffectiveDate(
+  raw: { startTime?: string; endTime?: string } | string | undefined
+): string | null {
+  if (!raw) return null
+  if (typeof raw === 'string') return raw
+  const start = raw.startTime ?? ''
+  const end = raw.endTime ?? ''
+  const joined = `${start}/${end}`
+  return joined === '/' ? null : joined
+}
+
+function normalizeGoogleCategory(raw: unknown): {
   categoryId: number | null
   categoryPath: string | null
 } {
-  if (!raw) {
-    return { categoryId: null, categoryPath: null }
-  }
-
+  if (!raw) return { categoryId: null, categoryPath: null }
   const str = String(raw).trim()
-  if (!str) {
-    return { categoryId: null, categoryPath: null }
-  }
+  if (!str) return { categoryId: null, categoryPath: null }
 
-  // Cas 1 : uniquement des chiffres → on considère que c'est un ID
-  const onlyDigits = /^[0-9]+$/.test(str)
-  if (onlyDigits) {
-    return {
-      categoryId: Number(str),
-      categoryPath: null, // on pourra récupérer le chemin via la table taxonomy plus tard
-    }
+  // Uniquement des chiffres -> c'est un ID Google.
+  if (/^[0-9]+$/.test(str)) {
+    return { categoryId: Number(str), categoryPath: null }
   }
-
-  // Cas 2 : sinon → on considère que c'est le chemin texte
-  return {
-    categoryId: null,
-    categoryPath: str,
-  }
+  // Sinon -> chemin texte.
+  return { categoryId: null, categoryPath: str }
 }
 
-// Petit helper pour mettre à jour le statut d'import d'un marchand
+/** Met à jour le statut d'import d'un marchand. */
 async function updateImportStatus(
   merchantId: number,
   status: 'success' | 'error',
   count: number | null,
-  message: string | null,
+  message: string | null
 ) {
   await supabase
     .from('merchants')
@@ -49,9 +75,54 @@ async function updateImportStatus(
     .eq('id', merchantId)
 }
 
+/**
+ * Résout les catégories Google d'une page de produits en UNE seule requête
+ * (au lieu d'une requête Supabase par produit).
+ * Renvoie une Map path(texte) -> id.
+ */
+async function resolveCategoryPaths(paths: string[]): Promise<Map<string, number>> {
+  const map = new Map<string, number>()
+  const unique = Array.from(new Set(paths)).filter(Boolean)
+  if (unique.length === 0) return map
+
+  const { data, error } = await supabase
+    .from('google_categories')
+    .select('id, full_path')
+    .in('full_path', unique)
+
+  if (!error && data) {
+    for (const row of data) {
+      if (row.full_path != null) map.set(row.full_path, row.id)
+    }
+  }
+  return map
+}
+
+/**
+ * Déclenche la suite de la synchro (best-effort). On envoie la requête puis on
+ * l'abandonne après un court délai : l'invocation suivante démarre côté serveur
+ * indépendamment. Non fiable à 100 % sur serverless -> le cron/bouton admin
+ * reprennent le curseur si la chaîne casse.
+ */
+async function triggerNextBatch(url: string) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 2_500)
+  try {
+    await fetch(url, { signal: controller.signal })
+  } catch {
+    // abort volontaire ou réseau : l'invocation suivante est déjà lancée.
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+// -------- Route --------------------------------------------------------------
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const merchantIdParam = searchParams.get('merchantId')
+  // Permet de désactiver l'auto-enchaînement (tests locaux pas-à-pas).
+  const chain = searchParams.get('chain') !== '0'
 
   if (!merchantIdParam) {
     return NextResponse.json(
@@ -68,7 +139,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // 1) Récupérer le marchand dans Supabase
+  // 1) Charger le marchand.
   const { data: merchant, error: merchantError } = await supabase
     .from('merchants')
     .select('*')
@@ -82,7 +153,6 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Check if sync is paused
   if (merchant.sync_paused) {
     return NextResponse.json(
       { success: false, message: 'Synchronisation en pause pour ce marchand' },
@@ -92,163 +162,202 @@ export async function GET(req: NextRequest) {
 
   const startTime = Date.now()
 
-  try {
-    const content = getGoogleMerchantClient()
+  // 2) Déterminer le cycle : reprise si un cycle est déjà en cours, sinon
+  //    on démarre un nouveau cycle.
+  const resuming =
+    merchant.sync_state === 'running' && !!merchant.sync_run_id
+  const runId: string = resuming
+    ? merchant.sync_run_id
+    : new Date().toISOString()
+  let pageToken: string | null = resuming ? merchant.sync_cursor : null
+  const country: string = merchant.country ?? 'FR'
 
-    // 2) Appel Content API → liste des produits du GMC
-    const gmcResponse = await content.products.list({
-      merchantId: merchant.gmc_id,
-      maxResults: 250, // on pourra ajuster plus tard
-    })
-
-    const gmcProducts = (gmcResponse.data.resources || []) as any[]
-
-    // On construit les lignes en async pour pouvoir appeler Supabase
-    const rows = await Promise.all(
-      gmcProducts.map(async (p) => {
-        const { categoryId, categoryPath } = normalizeGoogleCategory(
-          (p as any).googleProductCategory ?? (p as any).google_product_category
-        )
-
-        let finalCategoryId = categoryId
-        let finalCategoryPath = categoryPath
-
-        // Si on n'a pas d'ID mais qu'on a un chemin texte,
-        // on essaie de le mapper à un ID via la table google_categories
-        if (!finalCategoryId && finalCategoryPath) {
-          const { data: cats, error: catError } = await supabase
-            .from('google_categories')
-            .select('id, full_path')
-            .eq('full_path', finalCategoryPath)
-            .limit(1)
-
-          if (!catError && cats && cats.length > 0) {
-            finalCategoryId = cats[0].id
-            // on garde le texte tel qu'envoyé par le marchand
-          }
-        }
-
-        return {
-          merchant_id: merchant.id,
-          offer_id: p.offerId ?? null,
-          title: p.title ?? null,
-          description: p.description ?? null,
-          link: p.link ?? null,
-          image_link: p.imageLink ?? null,
-          price_value: p.price?.value ? Number(p.price.value) : null,
-          price_currency: p.price?.currency ?? null,
-          availability: p.availability ?? null,
-          brand: p.brand ?? null,
-          // prix soldé (si présent dans le feed)
-          sale_price: p.salePrice?.value ? Number(p.salePrice.value) : null,
-          sale_price_effective_date: (p as any).salePriceEffectiveDate ?? null,
-
-          // catégories normalisées
-          google_product_category_id: finalCategoryId,
-          google_product_category_path: finalCategoryPath,
-
-          // Frais de livraison (on prend le premier prix de livraison défini)
-          shipping_price: p.shipping?.[0]?.price?.value ? Number(p.shipping[0].price.value) : null,
-
-          raw_data: p,
-        }
+  if (!resuming) {
+    await supabase
+      .from('merchants')
+      .update({
+        sync_state: 'running',
+        sync_run_id: runId,
+        sync_cursor: null,
+        sync_started_at: runId,
+        sync_page_count: 0,
       })
-    )
+      .eq('id', merchant.id)
+  }
 
-    // 4) Supprimer les anciens produits de ce marchand puis insérer les nouveaux
+  let pagesThisCall = 0
+  let productsThisCall = 0
 
-    const { error: deleteError } = await supabase
-      .from('products')
-      .delete()
-      .eq('merchant_id', merchant.id)
+  try {
+    // 3) Traiter des pages tant qu'il reste du temps.
+    do {
+      const page = await listMerchantProductsPage({
+        accountId: merchant.gmc_id,
+        pageToken,
+        pageSize: PAGE_SIZE,
+      })
 
-    if (deleteError) {
-      await updateImportStatus(
-        merchant.id,
-        'error',
-        0,
-        `Erreur suppression produits existants: ${deleteError.message}`
-      )
+      const products = page.products ?? []
 
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Erreur suppression produits existants',
-          deleteError,
-        },
-        { status: 500 }
-      )
-    }
+      if (products.length > 0) {
+        // Résolution des catégories (texte -> id) en une requête pour la page.
+        const pathsToResolve: string[] = []
+        const normalized = products.map((p) => {
+          const cat = normalizeGoogleCategory(p.productAttributes?.googleProductCategory)
+          if (!cat.categoryId && cat.categoryPath) pathsToResolve.push(cat.categoryPath)
+          return cat
+        })
+        const pathToId = await resolveCategoryPaths(pathsToResolve)
 
-    const { error: insertError } = await supabase.from('products').insert(rows)
+        const rows = products.map((p: MerchantProduct, i) => {
+          const attrs = p.productAttributes ?? {}
+          const cat = normalized[i]
+          const categoryId =
+            cat.categoryId ??
+            (cat.categoryPath ? pathToId.get(cat.categoryPath) ?? null : null)
 
-    if (insertError) {
-      await updateImportStatus(
-        merchant.id,
-        'error',
-        0,
-        `Erreur insertion Supabase: ${insertError.message}`
-      )
+          return {
+            merchant_id: merchant.id,
+            offer_id: p.offerId ?? null,
+            title: attrs.title ?? null,
+            description: attrs.description ?? null,
+            link: attrs.link ?? null,
+            image_link: attrs.imageLink ?? null,
+            price_value: priceFromMicros(attrs.price),
+            price_currency: attrs.price?.currencyCode ?? null,
+            availability: attrs.availability ?? null,
+            brand: attrs.brand ?? null,
+            sale_price: priceFromMicros(attrs.salePrice),
+            sale_price_effective_date: normalizeSalePriceEffectiveDate(
+              attrs.salePriceEffectiveDate
+            ),
+            gtin: attrs.gtins?.[0] ?? null,
+            google_product_category_id: categoryId,
+            google_product_category_path: cat.categoryPath,
+            shipping_price: priceFromMicros(attrs.shipping?.[0]?.price),
+            country_code: country,
+            // Marqueur "vu lors de ce cycle" : constant sur tout le cycle,
+            // permet de supprimer les produits périmés en fin de cycle.
+            last_seen_at: runId,
+          }
+        })
 
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'Erreur insertion Supabase',
-          insertError,
-        },
-        { status: 500 }
-      )
-    }
+        // UPSERT (clé merchant_id + offer_id).
+        const { error: upsertError } = await supabase
+          .from('products')
+          .upsert(rows, { onConflict: 'merchant_id,offer_id' })
 
+        if (upsertError) {
+          throw new Error(`Upsert Supabase: ${upsertError.message}`)
+        }
 
-    // 5) Mise à jour du statut d'import
-    await updateImportStatus(merchant.id, 'success', rows.length, null)
+        productsThisCall += rows.length
+      }
 
-    // 6) Ecrire le log de synchronisation
+      pageToken = page.nextPageToken ?? null
+      pagesThisCall += 1
+
+      // Sauvegarde du curseur après chaque page (reprise possible à tout moment).
+      await supabase
+        .from('merchants')
+        .update({
+          sync_cursor: pageToken,
+          sync_page_count: (merchant.sync_page_count ?? 0) + pagesThisCall,
+        })
+        .eq('id', merchant.id)
+    } while (pageToken && Date.now() - startTime < TIME_BUDGET_MS)
+
     const durationMs = Date.now() - startTime
-    await supabase.from('sync_logs').insert({
-      merchant_id: merchant.id,
-      product_count: rows.length,
-      status: 'success',
-      duration_ms: durationMs,
-      message: null,
-    })
 
-    // 7) Nettoyage des logs > 30 jours
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    await supabase.from('sync_logs').delete().lt('created_at', thirtyDaysAgo)
+    if (!pageToken) {
+      // 4a) CYCLE TERMINÉ : suppression des produits non revus + clôture.
+      const { error: staleError } = await supabase
+        .from('products')
+        .delete()
+        .eq('merchant_id', merchant.id)
+        .or(`last_seen_at.is.null,last_seen_at.lt."${runId}"`)
+
+      // Comptage final des produits du marchand.
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('merchant_id', merchant.id)
+
+      await supabase
+        .from('merchants')
+        .update({
+          sync_state: 'idle',
+          sync_cursor: null,
+          sync_run_id: null,
+        })
+        .eq('id', merchant.id)
+
+      await updateImportStatus(
+        merchant.id,
+        'success',
+        count ?? productsThisCall,
+        staleError ? `Produits périmés non supprimés: ${staleError.message}` : null
+      )
+
+      await supabase.from('sync_logs').insert({
+        merchant_id: merchant.id,
+        product_count: count ?? productsThisCall,
+        status: 'success',
+        duration_ms: durationMs,
+        message: `Cycle terminé (${pagesThisCall} pages ce lot)`,
+      })
+
+      // Nettoyage des logs > 30 jours.
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString()
+      await supabase.from('sync_logs').delete().lt('created_at', thirtyDaysAgo)
+
+      return NextResponse.json({
+        success: true,
+        done: true,
+        pages_this_call: pagesThisCall,
+        products_this_call: productsThisCall,
+        total_products: count ?? null,
+        duration_ms: durationMs,
+      })
+    }
+
+    // 4b) CYCLE EN COURS : le curseur est déjà sauvegardé, on relance la suite.
+    if (chain) {
+      const nextUrl = new URL('/api/gmc/sync', req.url)
+      nextUrl.searchParams.set('merchantId', String(merchant.id))
+      await triggerNextBatch(nextUrl.toString())
+    }
 
     return NextResponse.json({
       success: true,
-      imported: rows.length,
+      done: false,
+      pages_this_call: pagesThisCall,
+      products_this_call: productsThisCall,
+      next_cursor: pageToken,
+      chained: chain,
       duration_ms: durationMs,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Erreur sync GMC:', err)
-
-    await updateImportStatus(
-      merchant.id,
-      'error',
-      0,
-      err?.message || 'Erreur inconnue lors de la synchro GMC'
-    )
-
-    // Log l'erreur aussi
+    const message = err instanceof Error ? err.message : String(err)
     const durationMs = Date.now() - startTime
+
+    // On laisse le curseur en place (sync_state reste 'running') pour permettre
+    // une reprise ultérieure par le cron/bouton admin, sans repartir de zéro.
+    await updateImportStatus(merchant.id, 'error', null, message)
+
     await supabase.from('sync_logs').insert({
       merchant_id: merchant.id,
-      product_count: 0,
+      product_count: productsThisCall,
       status: 'error',
       duration_ms: durationMs,
-      message: err?.message || 'Erreur inconnue',
+      message,
     })
 
     return NextResponse.json(
-      {
-        success: false,
-        message: 'Erreur lors de la synchro GMC',
-        error: err?.message || String(err),
-      },
+      { success: false, message: 'Erreur lors de la synchro GMC', error: message },
       { status: 500 }
     )
   }

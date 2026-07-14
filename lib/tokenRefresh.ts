@@ -52,27 +52,48 @@ export async function getValidAccessToken(
 }
 
 /**
- * Fetches merchant accounts from Google Merchant Center API using the given access token.
+ * Fetches the merchant accounts accessible to the authenticated user via the
+ * Merchant API (accounts sub-API), replacing the deprecated Content API v2.1
+ * `accounts/authinfo` endpoint (coupée par Google le 18 août 2026).
+ *
+ * NOTE : cette partie ne peut pas être testée en local sans une vraie session
+ * OAuth marchand. À vérifier de bout-en-bout lors d'un onboarding réel.
+ * Le format de retour ({ merchantId, aggregatorId }) est conservé à l'identique
+ * pour ne pas casser app/onboarding/auto/page.tsx.
  */
 export async function fetchMerchantAccounts(accessToken: string) {
-  const accountsResponse = await fetch(
-    'https://shoppingcontent.googleapis.com/content/v2.1/accounts/authinfo',
-    {
+  const accounts: { merchantId: string; aggregatorId: string | null }[] = []
+  let pageToken: string | undefined
+  let guard = 0
+
+  do {
+    const url = new URL('https://merchantapi.googleapis.com/accounts/v1/accounts')
+    url.searchParams.set('pageSize', '250')
+    if (pageToken) url.searchParams.set('pageToken', pageToken)
+
+    const accountsResponse = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${accessToken}` },
+    })
+
+    const accountsData = await accountsResponse.json()
+
+    if (!accountsResponse.ok) {
+      console.error('Merchant API accounts.list error:', accountsData)
+      return { error: 'Failed to fetch merchant accounts', details: accountsData }
     }
-  )
 
-  const accountsData = await accountsResponse.json()
+    for (const acc of accountsData.accounts || []) {
+      // acc.name = "accounts/{id}" ; acc.accountId = id numérique.
+      const merchantId =
+        acc.accountId || (typeof acc.name === 'string' ? acc.name.split('/')[1] : null)
+      if (merchantId) {
+        accounts.push({ merchantId: String(merchantId), aggregatorId: null })
+      }
+    }
 
-  if (!accountsResponse.ok) {
-    console.error('Merchant API error:', accountsData)
-    return { error: 'Failed to fetch merchant accounts', details: accountsData }
-  }
-
-  const accounts = (accountsData.accountIdentifiers || []).map((acc: any) => ({
-    merchantId: acc.merchantId || acc.aggregatorId,
-    aggregatorId: acc.aggregatorId || null,
-  }))
+    pageToken = accountsData.nextPageToken
+    guard += 1
+  } while (pageToken && guard < 20)
 
   return { accounts }
 }
