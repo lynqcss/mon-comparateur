@@ -24,11 +24,17 @@ export async function GET(req: Request) {
 
     for (const merchant of merchants) {
         try {
-            // Call the existing sync endpoint internally
+            // Call the existing sync endpoint internally.
+            // /api/gmc/sync est protégé par le middleware : on transmet le
+            // secret interne pour être autorisé en server-to-server.
             const syncUrl = new URL('/api/gmc/sync', req.url)
             syncUrl.searchParams.set('merchantId', String(merchant.id))
 
-            const res = await fetch(syncUrl.toString())
+            const res = await fetch(syncUrl.toString(), {
+                headers: process.env.CRON_SECRET
+                    ? { Authorization: `Bearer ${process.env.CRON_SECRET}` }
+                    : undefined,
+            })
             const data = await res.json()
 
             results.push({

@@ -108,7 +108,13 @@ async function triggerNextBatch(url: string) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 2_500)
   try {
-    await fetch(url, { signal: controller.signal })
+    // /api/gmc/sync est protégé par le middleware : on transmet le secret interne.
+    await fetch(url, {
+      signal: controller.signal,
+      headers: process.env.CRON_SECRET
+        ? { Authorization: `Bearer ${process.env.CRON_SECRET}` }
+        : undefined,
+    })
   } catch {
     // abort volontaire ou réseau : l'invocation suivante est déjà lancée.
   } finally {
