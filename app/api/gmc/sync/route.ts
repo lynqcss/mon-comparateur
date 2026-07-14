@@ -305,6 +305,12 @@ export async function GET(req: NextRequest) {
         staleError ? `Produits périmés non supprimés: ${staleError.message}` : null
       )
 
+      // Rafraîchir la vue matérialisée de comparaison multi-marchands (best-effort).
+      const { error: refreshError } = await supabase.rpc('refresh_product_groups')
+      if (refreshError) {
+        console.error('refresh_product_groups:', refreshError.message)
+      }
+
       await supabase.from('sync_logs').insert({
         merchant_id: merchant.id,
         product_count: count ?? productsThisCall,

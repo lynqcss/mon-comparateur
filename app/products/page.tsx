@@ -25,27 +25,24 @@ type ProductsPageProps = {
   }>
 }
 
-type ProductRow = {
-  id: number
+// 1 ligne = 1 GROUPE de produit (vue matérialisée product_groups).
+type GroupRow = {
+  group_key: string
+  route_key: string
+  gtin: string | null
   title: string | null
   image_link: string | null
-  price_value: number | null
-  price_currency: string | null
   brand: string | null
+  price_currency: string | null
   google_product_category_id: number | null
-  merchant_id: number | null
-  merchants: { name: string | null }[] | { name: string | null } | null
+  min_price: number | null
+  merchant_count: number | null
 }
 
 type CategoryRow = {
   id: number
   level1: string | null
   full_path: string | null
-}
-
-type MerchantRow = {
-  id: number
-  name: string | null
 }
 
 const ROOT_ICONS: Record<string, string> = {
@@ -91,18 +88,22 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   }
 
   const selectedBrands = getArray(params.brands)
+  // NOTE: filtre par marchand = "plus tard" dans le brief. Le param est conservé
+  // pour ne pas casser les URLs, mais n'est pas appliqué sur la vue groupée.
   const selectedMerchants = getArray(params.merchants)
   const minPrice = params.minPrice ? Number(params.minPrice) : null
   const maxPrice = params.maxPrice ? Number(params.maxPrice) : null
 
-  const selectedCountry = params.country === 'PL' ? 'PL' : 'FR'
+  // Pays = filtre de pays (défaut FR). Pass-through pour supporter d'autres
+  // pays (et un pays de test isolé) sans casser FR/PL.
+  const selectedCountry = (params.country || 'FR').toUpperCase()
   const selectedLang = params.lang || (selectedCountry === 'FR' ? 'fr' : 'en')
   const sort = params.sort || null
   const t = getTranslation(selectedLang)
 
-  // --- Data Fetching Logic ---
+  // --- Sidebar catégories : catégories distinctes présentes dans les groupes ---
   const { data: categoryIdRows } = await supabase
-    .from('products')
+    .from('product_groups')
     .select('google_product_category_id')
     .eq('country_code', selectedCountry)
     .not('google_product_category_id', 'is', null)
@@ -118,94 +119,74 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     categories = (cats as CategoryRow[]) || []
   }
 
-  // To build the sidebar we just need the distinct level1 of these categories
   const rootCategories = Array.from(new Set(categories.map(c => c.level1).filter(Boolean))) as string[]
   rootCategories.sort()
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
+  // Helper : résout un filtre catégorie en liste d'IDs google_product_category_id
+  const resolveCategoryIds = async (): Promise<number[] | null> => {
+    if (categoryId) return [categoryId]
+    if (categoryPath) {
+      const { data } = await supabase
+        .from('google_categories')
+        .select('id')
+        .ilike('full_path', `${categoryPath}%`)
+      return (data || []).map(c => c.id)
+    }
+    if (rootCategory) {
+      const { data } = await supabase
+        .from('google_categories')
+        .select('id')
+        .eq('level1', rootCategory)
+      return (data || []).map(c => c.id)
+    }
+    return null
+  }
+  const categoryIds = await resolveCategoryIds()
+
   let query = supabase
-    .from('products')
-    .select('id, title, image_link, price_value, price_currency, brand, google_product_category_id, merchant_id, merchants(name)', { count: 'exact' })
+    .from('product_groups')
+    .select('group_key, route_key, gtin, title, image_link, brand, price_currency, google_product_category_id, min_price, merchant_count', { count: 'exact' })
     .eq('country_code', selectedCountry)
 
-  if (categoryId) query = query.eq('google_product_category_id', categoryId)
-  else if (categoryPath) {
-    const { data: matchedCats } = await supabase
-      .from('google_categories')
-      .select('id')
-      .ilike('full_path', `${categoryPath}%`)
-
-    if (matchedCats && matchedCats.length > 0) {
-      query = query.in('google_product_category_id', matchedCats.map(c => c.id))
-    } else {
-      query = query.eq('google_product_category_id', -1) // force no match
-    }
-  }
-  else if (rootCategory) {
-    const { data: rootCatIds } = await supabase
-      .from('google_categories')
-      .select('id')
-      .eq('level1', rootCategory)
-
-    if (rootCatIds && rootCatIds.length > 0) {
-      query = query.in('google_product_category_id', rootCatIds.map(c => c.id))
-    } else {
-      query = query.eq('google_product_category_id', -1) // force no match
-    }
+  if (categoryIds !== null) {
+    query = categoryIds.length > 0
+      ? query.in('google_product_category_id', categoryIds)
+      : query.eq('google_product_category_id', -1) // force no match
   }
 
   if (q) query = query.ilike('title', `%${q}%`)
   if (selectedBrands.length > 0) query = query.in('brand', selectedBrands)
-  if (minPrice != null && !Number.isNaN(minPrice)) query = query.gte('price_value', minPrice)
-  if (maxPrice != null && !Number.isNaN(maxPrice)) query = query.lte('price_value', maxPrice)
-  if (selectedMerchants.length > 0) query = query.in('merchant_id', selectedMerchants.map(Number).filter(n => !Number.isNaN(n)))
+  if (minPrice != null && !Number.isNaN(minPrice)) query = query.gte('min_price', minPrice)
+  if (maxPrice != null && !Number.isNaN(maxPrice)) query = query.lte('min_price', maxPrice)
 
-  const { data: products, count } = await (sort === 'price_asc'
-    ? query.order('price_value', { ascending: true })
+  const { data: groups, count } = await (sort === 'price_asc'
+    ? query.order('min_price', { ascending: true })
     : sort === 'price_desc'
-      ? query.order('price_value', { ascending: false })
-      : query.order('id', { ascending: false })
+      ? query.order('min_price', { ascending: false })
+      : query.order('merchant_count', { ascending: false }).order('group_key', { ascending: false })
   ).range(from, to)
 
-  const productList = (products as ProductRow[]) || []
+  const groupList = (groups as GroupRow[]) || []
   const total = count ?? 0
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
 
-  // Meta data for filters - Fetch unique brands CONTEXTUAL TO ACTIVE FILTERS
+  // --- Facette marques (contextuelle aux filtres actifs) ---
   let brandsQuery = supabase
-    .from('products')
+    .from('product_groups')
     .select('brand')
     .eq('country_code', selectedCountry)
     .not('brand', 'is', null)
 
-  if (categoryId) brandsQuery = brandsQuery.eq('google_product_category_id', categoryId)
-  else if (categoryPath) {
-    const { data: matchedCats } = await supabase
-      .from('google_categories')
-      .select('id')
-      .ilike('full_path', `${categoryPath}%`)
-
-    if (matchedCats && matchedCats.length > 0) {
-      brandsQuery = brandsQuery.in('google_product_category_id', matchedCats.map(c => c.id))
-    }
-  }
-  else if (rootCategory) {
-    const { data: rootCatIds } = await supabase
-      .from('google_categories')
-      .select('id')
-      .eq('level1', rootCategory)
-
-    if (rootCatIds && rootCatIds.length > 0) {
-      brandsQuery = brandsQuery.in('google_product_category_id', rootCatIds.map(c => c.id))
-    }
+  if (categoryIds !== null && categoryIds.length > 0) {
+    brandsQuery = brandsQuery.in('google_product_category_id', categoryIds)
   }
   if (q) brandsQuery = brandsQuery.ilike('title', `%${q}%`)
 
   const { data: brandsData } = await brandsQuery
 
-  // Count brand frequencies for smart sorting
   const brandCounts: Record<string, number> = {}
   if (brandsData) {
     for (const r of brandsData) {
@@ -213,15 +194,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     }
   }
 
-  // Sort by popularity (count desc)
   let sortedBrands = Object.keys(brandCounts).sort((a, b) => brandCounts[b] - brandCounts[a])
-
-  // Limit to top 100 ONLY on "All Products" page (safety)
   if (!categoryId && !rootCategory && !categoryPath) {
     sortedBrands = sortedBrands.slice(0, 100)
   }
-
-  // Final sort alphabetically for UI
   const allBrands = sortedBrands.sort()
 
   const buildUrl = (extra: Record<string, string | number | null | string[]>) => {
@@ -390,42 +366,58 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         {/* Product Grid */}
         <div className="flex-1">
-          {productList.length > 0 ? (
+          {groupList.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {productList.map((p) => (
-                <article key={p.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-all hover:shadow-2xl hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/50">
-                  <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
-                    <div className="aspect-square p-4 transition-transform duration-500 group-hover:scale-110">
-                      {p.image_link ? (
-                        <img src={p.image_link} alt={p.title || ''} className="h-full w-full object-contain" loading="lazy" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">{t.product.no_image}</div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="flex flex-1 flex-col p-4">
-                    <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                      <span>{p.brand || t.product.brand_unknown}</span>
-                      {p.merchants && (
-                        <span className="text-zinc-300">
-                          | {Array.isArray(p.merchants) ? p.merchants[0]?.name : (p.merchants as any).name}
-                        </span>
-                      )}
-                    </div>
-                    <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="mb-4 line-clamp-2 text-sm font-semibold leading-relaxed text-zinc-900 transition-colors hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300">
-                      {p.title}
+              {groupList.map((g) => {
+                const href = `/product/${encodeURIComponent(g.route_key)}?country=${selectedCountry}&lang=${selectedLang}`
+                const multi = (g.merchant_count ?? 0) >= 2
+                return (
+                  <article key={g.group_key} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-all hover:shadow-2xl hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/50">
+                    {multi && (
+                      <span className="absolute top-3 left-3 z-10 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow">
+                        {g.merchant_count} {(t.products as any).merchants_label || 'marchands'}
+                      </span>
+                    )}
+                    <Link prefetch={false} href={href} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
+                      <div className="aspect-square p-4 transition-transform duration-500 group-hover:scale-110">
+                        {g.image_link ? (
+                          <img src={g.image_link} alt={g.title || ''} className="h-full w-full object-contain" loading="lazy" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">{t.product.no_image}</div>
+                        )}
+                      </div>
                     </Link>
-                    <div className="mt-auto flex items-center justify-between">
-                      <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(p.price_value, p.price_currency)}</span>
-                      <Link prefetch={false} href={`/product/${p.id}?country=${selectedCountry}&lang=${selectedLang}`} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                    <div className="flex flex-1 flex-col p-4">
+                      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                        <span>{g.brand || t.product.brand_unknown}</span>
+                        {multi && (
+                          <span className="text-emerald-600">
+                            {(t.products as any).compare_label || 'Comparer'}
+                          </span>
+                        )}
+                      </div>
+                      <Link prefetch={false} href={href} className="mb-4 line-clamp-2 text-sm font-semibold leading-relaxed text-zinc-900 transition-colors hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300">
+                        {g.title}
                       </Link>
+                      <div className="mt-auto flex items-center justify-between">
+                        <div className="flex flex-col">
+                          {multi && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                              {(t.products as any).from_label || 'à partir de'}
+                            </span>
+                          )}
+                          <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(g.min_price, g.price_currency)}</span>
+                        </div>
+                        <Link prefetch={false} href={href} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                )
+              })}
             </div>
           ) : (
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
