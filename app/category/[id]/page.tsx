@@ -1,5 +1,5 @@
 // app/category/[id]/page.tsx
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import { formatPrice } from '@/lib/utils'
 

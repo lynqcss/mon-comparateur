@@ -1,5 +1,11 @@
+# Les fiches produit /product/* restent VOLONTAIREMENT crawlables :
+# c'est la surface indexable exigée par Google CSS.
+# Les pages ci-dessous sont bloquées car elles sont coûteuses à rendre
+# (combinatoire de filtres, requêtes lourdes) et sans valeur SEO propre.
 User-agent: *
 Disallow: /products
+Disallow: /category/
+Disallow: /merchants
 Disallow: /api/
 Disallow: /admin/
 Disallow: /onboarding/

@@ -1,5 +1,5 @@
 // app/product/[id]/page.tsx
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import ExpandableDescription from '@/app/components/ExpandableDescription'
 import { getTranslation } from '@/lib/i18n'

@@ -10,11 +10,15 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch all non-paused merchants
+    // Marchands à synchroniser : non pausés ET réellement rattachés à un compte
+    // Merchant Center. Le filtre sur `gmc_id` est un garde-fou : sans lui, les
+    // marchands de démo (sans gmc_id) déclenchaient une invocation serverless
+    // chacun, vouée à l'échec — 98 appels inutiles par jour.
     const { data: merchants, error } = await supabase
         .from('merchants')
         .select('*')
         .eq('sync_paused', false)
+        .not('gmc_id', 'is', null)
 
     if (error || !merchants) {
         return NextResponse.json({ error: 'Failed to fetch merchants' }, { status: 500 })

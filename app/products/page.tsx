@@ -1,9 +1,10 @@
 // app/products/page.tsx
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import SortDropdown from '@/app/components/SortDropdown'
 import { getTranslation } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils'
+import { getRootCategories, getCategoryIdsForFilter, getBrands } from '@/lib/facets'
 
 const PAGE_SIZE = 36
 
@@ -35,17 +36,6 @@ type ProductRow = {
   google_product_category_id: number | null
   merchant_id: number | null
   merchants: { name: string | null }[] | { name: string | null } | null
-}
-
-type CategoryRow = {
-  id: number
-  level1: string | null
-  full_path: string | null
-}
-
-type MerchantRow = {
-  id: number
-  name: string | null
 }
 
 const ROOT_ICONS: Record<string, string> = {
@@ -101,26 +91,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const t = getTranslation(selectedLang)
 
   // --- Data Fetching Logic ---
-  const { data: categoryIdRows } = await supabase
-    .from('products')
-    .select('google_product_category_id')
-    .eq('country_code', selectedCountry)
-    .not('google_product_category_id', 'is', null)
-
-  const uniqueCategoryIds = Array.from(new Set((categoryIdRows || []).map((r) => r.google_product_category_id).filter((id): id is number => id !== null)))
-
-  let categories: CategoryRow[] = []
-  if (uniqueCategoryIds.length > 0) {
-    const { data: cats } = await supabase
-      .from('google_categories')
-      .select('id, level1, full_path')
-      .in('id', uniqueCategoryIds)
-    categories = (cats as CategoryRow[]) || []
-  }
-
-  // To build the sidebar we just need the distinct level1 of these categories
-  const rootCategories = Array.from(new Set(categories.map(c => c.level1).filter(Boolean))) as string[]
-  rootCategories.sort()
+  // Facettes mises en cache (cf. lib/facets.ts) : elles ne dépendent que du
+  // catalogue synchronisé (1x/jour), jamais du visiteur. Les recalculer à
+  // chaque rendu parcourait toute la table `products` à chaque requête.
+  const rootCategories = await getRootCategories(selectedCountry)
+  const categoryIds = await getCategoryIdsForFilter(categoryId, categoryPath, rootCategory)
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
@@ -130,30 +105,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     .select('id, title, image_link, price_value, price_currency, brand, google_product_category_id, merchant_id, merchants(name)', { count: 'exact' })
     .eq('country_code', selectedCountry)
 
-  if (categoryId) query = query.eq('google_product_category_id', categoryId)
-  else if (categoryPath) {
-    const { data: matchedCats } = await supabase
-      .from('google_categories')
-      .select('id')
-      .ilike('full_path', `${categoryPath}%`)
-
-    if (matchedCats && matchedCats.length > 0) {
-      query = query.in('google_product_category_id', matchedCats.map(c => c.id))
-    } else {
-      query = query.eq('google_product_category_id', -1) // force no match
-    }
-  }
-  else if (rootCategory) {
-    const { data: rootCatIds } = await supabase
-      .from('google_categories')
-      .select('id')
-      .eq('level1', rootCategory)
-
-    if (rootCatIds && rootCatIds.length > 0) {
-      query = query.in('google_product_category_id', rootCatIds.map(c => c.id))
-    } else {
-      query = query.eq('google_product_category_id', -1) // force no match
-    }
+  if (categoryIds !== null) {
+    query = categoryIds.length > 0
+      ? query.in('google_product_category_id', categoryIds)
+      : query.eq('google_product_category_id', -1) // force no match
   }
 
   if (q) query = query.ilike('title', `%${q}%`)
@@ -173,56 +128,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const total = count ?? 0
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
 
-  // Meta data for filters - Fetch unique brands CONTEXTUAL TO ACTIVE FILTERS
-  let brandsQuery = supabase
-    .from('products')
-    .select('brand')
-    .eq('country_code', selectedCountry)
-    .not('brand', 'is', null)
-
-  if (categoryId) brandsQuery = brandsQuery.eq('google_product_category_id', categoryId)
-  else if (categoryPath) {
-    const { data: matchedCats } = await supabase
-      .from('google_categories')
-      .select('id')
-      .ilike('full_path', `${categoryPath}%`)
-
-    if (matchedCats && matchedCats.length > 0) {
-      brandsQuery = brandsQuery.in('google_product_category_id', matchedCats.map(c => c.id))
-    }
-  }
-  else if (rootCategory) {
-    const { data: rootCatIds } = await supabase
-      .from('google_categories')
-      .select('id')
-      .eq('level1', rootCategory)
-
-    if (rootCatIds && rootCatIds.length > 0) {
-      brandsQuery = brandsQuery.in('google_product_category_id', rootCatIds.map(c => c.id))
-    }
-  }
-  if (q) brandsQuery = brandsQuery.ilike('title', `%${q}%`)
-
-  const { data: brandsData } = await brandsQuery
-
-  // Count brand frequencies for smart sorting
-  const brandCounts: Record<string, number> = {}
-  if (brandsData) {
-    for (const r of brandsData) {
-      if (r.brand) brandCounts[r.brand] = (brandCounts[r.brand] || 0) + 1
-    }
-  }
-
-  // Sort by popularity (count desc)
-  let sortedBrands = Object.keys(brandCounts).sort((a, b) => brandCounts[b] - brandCounts[a])
-
-  // Limit to top 100 ONLY on "All Products" page (safety)
-  if (!categoryId && !rootCategory && !categoryPath) {
-    sortedBrands = sortedBrands.slice(0, 100)
-  }
-
-  // Final sort alphabetically for UI
-  const allBrands = sortedBrands.sort()
+  // Marques disponibles pour les filtres actifs (facette cachée, cf. lib/facets.ts)
+  const allBrands = await getBrands(selectedCountry, categoryIds, q)
 
   const buildUrl = (extra: Record<string, string | number | null | string[]>) => {
     const sp = new URLSearchParams()
