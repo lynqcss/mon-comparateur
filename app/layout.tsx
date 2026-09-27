@@ -8,6 +8,10 @@ import Footer from './components/Footer'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
+  // Base des URLs canoniques déclarées par les pages (voir /products et
+  // /product/[id]) : sans elle, Next ne peut pas résoudre une canonique
+  // relative.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://lynq-css.com'),
   title: 'Lynq | Premium CSS Comparison Shopping',
   description: 'Lynq Comparison Shopping Service - Compare prices and find the best deals from top merchants.',
 }

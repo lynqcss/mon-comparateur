@@ -1,4 +1,5 @@
 // app/product/[id]/page.tsx
+import type { Metadata } from 'next'
 import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import ExpandableDescription from '@/app/components/ExpandableDescription'
@@ -32,6 +33,15 @@ type ProductRow = {
   country_code: string | null
   shipping_price: number | null
   merchants: { name: string | null }[] | { name: string | null } | null
+}
+
+// La fiche est la surface indexable voulue (exigence Google CSS), mais elle
+// est servie sous plusieurs variantes (?country=…&lang=…). On déclare une
+// canonique sans paramètres pour qu'elles n'apparaissent pas comme autant de
+// pages distinctes aux yeux des crawlers.
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params
+  return { alternates: { canonical: `/product/${encodeURIComponent(id)}` } }
 }
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {

@@ -16,7 +16,30 @@ import type { NextConfig } from "next";
 const PUBLIC_PAGE_CACHE =
   "public, s-maxage=3600, stale-while-revalidate=86400";
 
+// Ferme l'accès au site par l'URL `*.vercel.app`, qui contourne Cloudflare
+// (et donc le filtrage des bots). Volontairement implémenté ici et non dans
+// le middleware : une règle de `redirects()` est compilée dans la couche de
+// routage de Vercel et traitée AVANT les fonctions, alors qu'un middleware
+// s'exécuterait à chaque requête — y compris celles servies par le cache —
+// et annulerait une partie du gain recherché.
+//
+// Désactivé tant que CANONICAL_HOST n'est pas défini, pour pouvoir tester un
+// nouveau déploiement sur son URL .vercel.app. À définir (ex. lynq-css.com)
+// une fois le domaine branché.
+const CANONICAL_HOST = process.env.CANONICAL_HOST;
+
 const nextConfig: NextConfig = {
+  async redirects() {
+    if (!CANONICAL_HOST) return [];
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: ".*\\.vercel\\.app" }],
+        destination: `https://${CANONICAL_HOST}/:path*`,
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
