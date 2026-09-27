@@ -1,11 +1,20 @@
 // app/products/page.tsx
-import Link from 'next/link'
+import type { Metadata } from 'next'
+import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import SortDropdown from '@/app/components/SortDropdown'
 import { getTranslation } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils'
+import { getRootCategories, getCategoryIdsForFilter, getBrands } from '@/lib/facets'
 
 const PAGE_SIZE = 36
+
+// Toutes les combinaisons de filtres (marque × catégorie × page × recherche)
+// pointent vers la même URL canonique : l'espace d'URL que les crawlers
+// peuvent indexer se réduit à une seule page, au lieu d'une combinatoire.
+export const metadata: Metadata = {
+  alternates: { canonical: '/products' },
+}
 
 type ProductsPageProps = {
   searchParams: Promise<{
@@ -37,12 +46,6 @@ type GroupRow = {
   google_product_category_id: number | null
   min_price: number | null
   merchant_count: number | null
-}
-
-type CategoryRow = {
-  id: number
-  level1: string | null
-  full_path: string | null
 }
 
 const ROOT_ICONS: Record<string, string> = {
@@ -101,50 +104,15 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const sort = params.sort || null
   const t = getTranslation(selectedLang)
 
-  // --- Sidebar catégories : catégories distinctes présentes dans les groupes ---
-  const { data: categoryIdRows } = await supabase
-    .from('product_groups')
-    .select('google_product_category_id')
-    .eq('country_code', selectedCountry)
-    .not('google_product_category_id', 'is', null)
-
-  const uniqueCategoryIds = Array.from(new Set((categoryIdRows || []).map((r) => r.google_product_category_id).filter((id): id is number => id !== null)))
-
-  let categories: CategoryRow[] = []
-  if (uniqueCategoryIds.length > 0) {
-    const { data: cats } = await supabase
-      .from('google_categories')
-      .select('id, level1, full_path')
-      .in('id', uniqueCategoryIds)
-    categories = (cats as CategoryRow[]) || []
-  }
-
-  const rootCategories = Array.from(new Set(categories.map(c => c.level1).filter(Boolean))) as string[]
-  rootCategories.sort()
+  // Facettes mises en cache (cf. lib/facets.ts) : elles ne dépendent que du
+  // catalogue synchronisé (1x/jour), jamais du visiteur. Les recalculer à
+  // chaque rendu parcourait toute la vue à chaque requête — l'un des facteurs
+  // du dépassement des quotas.
+  const rootCategories = await getRootCategories(selectedCountry)
+  const categoryIds = await getCategoryIdsForFilter(categoryId, categoryPath, rootCategory)
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
-
-  // Helper : résout un filtre catégorie en liste d'IDs google_product_category_id
-  const resolveCategoryIds = async (): Promise<number[] | null> => {
-    if (categoryId) return [categoryId]
-    if (categoryPath) {
-      const { data } = await supabase
-        .from('google_categories')
-        .select('id')
-        .ilike('full_path', `${categoryPath}%`)
-      return (data || []).map(c => c.id)
-    }
-    if (rootCategory) {
-      const { data } = await supabase
-        .from('google_categories')
-        .select('id')
-        .eq('level1', rootCategory)
-      return (data || []).map(c => c.id)
-    }
-    return null
-  }
-  const categoryIds = await resolveCategoryIds()
 
   let query = supabase
     .from('product_groups')
@@ -173,32 +141,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const total = count ?? 0
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
 
-  // --- Facette marques (contextuelle aux filtres actifs) ---
-  let brandsQuery = supabase
-    .from('product_groups')
-    .select('brand')
-    .eq('country_code', selectedCountry)
-    .not('brand', 'is', null)
-
-  if (categoryIds !== null && categoryIds.length > 0) {
-    brandsQuery = brandsQuery.in('google_product_category_id', categoryIds)
-  }
-  if (q) brandsQuery = brandsQuery.ilike('title', `%${q}%`)
-
-  const { data: brandsData } = await brandsQuery
-
-  const brandCounts: Record<string, number> = {}
-  if (brandsData) {
-    for (const r of brandsData) {
-      if (r.brand) brandCounts[r.brand] = (brandCounts[r.brand] || 0) + 1
-    }
-  }
-
-  let sortedBrands = Object.keys(brandCounts).sort((a, b) => brandCounts[b] - brandCounts[a])
-  if (!categoryId && !rootCategory && !categoryPath) {
-    sortedBrands = sortedBrands.slice(0, 100)
-  }
-  const allBrands = sortedBrands.sort()
+  // Marques disponibles pour les filtres actifs (facette cachée, cf. lib/facets.ts)
+  const allBrands = await getBrands(selectedCountry, categoryIds, q)
 
   const buildUrl = (extra: Record<string, string | number | null | string[]>) => {
     const sp = new URLSearchParams()
@@ -289,7 +233,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.categories}</h3>
             <div className="space-y-1">
               <Link
-                href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, merchants: null, minPrice: null, maxPrice: null, q: null })}
+                rel="nofollow" href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, merchants: null, minPrice: null, maxPrice: null, q: null })}
                 className={`block rounded-lg px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
               >
                 {t.products.all_offers}
@@ -297,7 +241,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {rootCategories.map(root => (
                 <Link
                   key={root}
-                  href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null })}
+                  rel="nofollow" href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null })}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${rootCategory === root ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
                 >
                   <span>{ROOT_ICONS[root] || '📂'}</span>
@@ -351,7 +295,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {allBrands.map(b => (
                 <Link
                   key={b}
-                  href={buildUrl({ brands: selectedBrands.includes(b) ? selectedBrands.filter(x => x !== b) : [...selectedBrands, b] })}
+                  rel="nofollow" href={buildUrl({ brands: selectedBrands.includes(b) ? selectedBrands.filter(x => x !== b) : [...selectedBrands, b] })}
                   className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
                 >
                   <div className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${selectedBrands.includes(b) ? 'bg-zinc-900 border-zinc-900 dark:bg-white dark:border-white' : 'border-zinc-300 dark:border-zinc-700'}`}>
@@ -424,7 +368,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               <div className="mb-4 text-4xl">🔎</div>
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.products.no_results}</h3>
               <p className="mt-2 text-sm text-zinc-500">{t.products.no_results_p}</p>
-              <Link prefetch={false} href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, merchants: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <Link prefetch={false} rel="nofollow" href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, merchants: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
                 {t.products.reset}
               </Link>
             </div>
@@ -434,7 +378,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           {totalPages > 1 && (
             <nav className="mt-16 flex items-center justify-center gap-2">
               <Link
-                href={buildUrl({ page: Math.max(page - 1, 1) })}
+                rel="nofollow" href={buildUrl({ page: Math.max(page - 1, 1) })}
                 className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 transition-all ${page === 1 ? 'pointer-events-none opacity-20' : 'hover:bg-zinc-900 hover:text-white dark:border-zinc-800'}`}
               >
                 ←
@@ -445,7 +389,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   return (
                     <Link
                       key={pNum}
-                      href={buildUrl({ page: pNum })}
+                      rel="nofollow" href={buildUrl({ page: pNum })}
                       className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all ${page === pNum ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                     >
                       {pNum}
@@ -454,7 +398,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 })}
               </div>
               <Link
-                href={buildUrl({ page: Math.min(page + 1, totalPages) })}
+                rel="nofollow" href={buildUrl({ page: Math.min(page + 1, totalPages) })}
                 className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 transition-all ${page === totalPages ? 'pointer-events-none opacity-20' : 'hover:bg-zinc-900 hover:text-white dark:border-zinc-800'}`}
               >
                 →

@@ -41,6 +41,21 @@ function normalizeSalePriceEffectiveDate(
   return joined === '/' ? null : joined
 }
 
+/**
+ * Ne conserve une valeur dans `gtin` que si elle ressemble vraiment à un GTIN
+ * (EAN/UPC/ISBN : 8, 12, 13 ou 14 chiffres).
+ *
+ * Le regroupement multi-marchands se fait sur ce champ : y laisser passer un
+ * identifiant interne de marchand ferait fusionner des produits sans rapport
+ * sur une même fiche — exactement le type de mauvaise comparaison qui peut
+ * faire refuser un dossier Google CSS. Les données de démonstration en base
+ * contiennent déjà ~232 valeurs de ce genre (« 1_106480 »).
+ */
+function normalizeGtin(raw: string | undefined | null): string | null {
+  const v = String(raw ?? '').trim()
+  return /^[0-9]{8}$|^[0-9]{12,14}$/.test(v) ? v : null
+}
+
 function normalizeGoogleCategory(raw: unknown): {
   categoryId: number | null
   categoryPath: string | null
@@ -237,7 +252,7 @@ export async function GET(req: NextRequest) {
             sale_price_effective_date: normalizeSalePriceEffectiveDate(
               attrs.salePriceEffectiveDate
             ),
-            gtin: attrs.gtins?.[0] ?? null,
+            gtin: normalizeGtin(attrs.gtins?.[0]),
             google_product_category_id: categoryId,
             google_product_category_path: cat.categoryPath,
             shipping_price: priceFromMicros(attrs.shipping?.[0]?.price),

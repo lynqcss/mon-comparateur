@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 

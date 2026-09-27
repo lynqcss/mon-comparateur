@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 import { useSearchParams } from 'next/navigation'
 import { getTranslation } from '@/lib/i18n'
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/app/components/AppLink'
 
 export default function OnboardingChoicePage() {
     const [copied, setCopied] = useState(false)

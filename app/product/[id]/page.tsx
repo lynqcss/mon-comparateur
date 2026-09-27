@@ -2,7 +2,8 @@
 // La clé d'URL ([id]) est soit un GTIN (fiche comparaison multi-marchands),
 // soit 'id-<id>' (singleton sans GTIN). Un ancien id numérique est redirigé
 // (308) vers la fiche canonique correspondante.
-import Link from 'next/link'
+import type { Metadata } from 'next'
+import Link from '@/app/components/AppLink'
 import { redirect } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import ExpandableDescription from '@/app/components/ExpandableDescription'
@@ -57,6 +58,15 @@ function NotFound({ title, message, cta }: { title: string; message?: string; ct
       <Link href="/products" className="mt-4 inline-block text-zinc-600 underline">{cta}</Link>
     </div>
   )
+}
+
+// La fiche est la surface indexable voulue (exigence Google CSS), mais elle
+// est servie sous plusieurs variantes (?country=…&lang=…). On déclare une
+// canonique sans paramètres pour qu'elles n'apparaissent pas comme autant de
+// pages distinctes aux yeux des crawlers.
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params
+  return { alternates: { canonical: `/product/${encodeURIComponent(id)}` } }
 }
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {

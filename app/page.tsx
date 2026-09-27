@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/app/components/AppLink";
 import { getTranslation } from "@/lib/i18n";
 import GoogleShoppingMockup from "./components/GoogleShoppingMockup";
 
