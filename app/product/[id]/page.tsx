@@ -93,7 +93,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       .maybeSingle<OfferRow>()
 
     if (!data) {
-      return <NotFound title={(t.product as any).not_found_title || 'Produit non trouvé'} cta={(t.product as any).back || 'Retour aux produits'} />
+      return <NotFound title={t.product.not_found_title} cta={t.product.back} />
     }
     // Si ce produit a en fait un GTIN, on redirige vers la fiche canonique.
     if (data.gtin && data.gtin.trim() !== '') {
@@ -121,9 +121,9 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       if (otherCountry && otherCountry.length > 0) {
         return (
           <NotFound
-            title={(t.product as any).not_found_region_title || 'Produit non trouvé'}
-            message={(t.product as any).not_found_region || "Désolé, nous ne trouvons pas ce produit dans votre région."}
-            cta={(t.product as any).back || 'Retour aux produits'}
+            title={t.product.not_found_title}
+            message={t.product.not_found_region}
+            cta={t.product.back}
           />
         )
       }
@@ -144,7 +144,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         }
       }
 
-      return <NotFound title={(t.product as any).not_found_title || 'Produit non trouvé'} cta={(t.product as any).back || 'Retour aux produits'} />
+      return <NotFound title={t.product.not_found_title} cta={t.product.back} />
     }
   }
 
@@ -236,7 +236,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           {isComparison && (
             <div className="absolute top-4 right-4 z-10">
               <span className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow">
-                {(t.product as any).compare_offers?.replace('{n}', String(distinctMerchants)) || `Comparez ${distinctMerchants} offres`}
+                {t.product.compare_offers.replace('{n}', String(distinctMerchants))}
               </span>
             </div>
           )}
@@ -268,7 +268,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <div className="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-2">
             {isComparison && (
               <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-                {(t.product as any).from_label || 'à partir de'}
+                {t.product.from_label}
               </span>
             )}
             <span className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-white">
@@ -280,8 +280,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <div className="mb-8">
             <h3 className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-3">
               {isComparison
-                ? ((t.product as any).offers_title?.replace('{n}', String(distinctMerchants)) || `${distinctMerchants} offres`)
-                : ((t.product as any).offer_title || 'Offre')}
+                ? (t.product.offers_title.replace('{n}', String(distinctMerchants)))
+                : (t.product.offer_title)}
             </h3>
             <div className="space-y-3">
               {dedup.map(({ offer, total }, idx) => {
@@ -296,7 +296,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
                         <span className="truncate text-sm font-bold text-zinc-900 dark:text-white">{m?.name || t.product.brand_unknown}</span>
                         {idx === 0 && isComparison && (
                           <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
-                            {(t.product as any).best_price || 'Meilleur prix'}
+                            {t.product.best_price}
                           </span>
                         )}
                       </div>

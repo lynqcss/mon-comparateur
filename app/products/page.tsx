@@ -319,7 +319,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   <article key={g.group_key} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-all hover:shadow-2xl hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/50">
                     {multi && (
                       <span className="absolute top-3 left-3 z-10 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow">
-                        {g.merchant_count} {(t.products as any).merchants_label || 'marchands'}
+                        {g.merchant_count} {t.products.merchants_label}
                       </span>
                     )}
                     <Link prefetch={false} href={href} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
@@ -336,7 +336,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         <span>{g.brand || t.product.brand_unknown}</span>
                         {multi && (
                           <span className="text-emerald-600">
-                            {(t.products as any).compare_label || 'Comparer'}
+                            {t.products.compare_label}
                           </span>
                         )}
                       </div>
@@ -347,7 +347,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                         <div className="flex flex-col">
                           {multi && (
                             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                              {(t.products as any).from_label || 'à partir de'}
+                              {t.products.from_label}
                             </span>
                           )}
                           <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(g.min_price, g.price_currency)}</span>

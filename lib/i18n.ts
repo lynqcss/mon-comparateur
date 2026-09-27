@@ -55,6 +55,9 @@ export const translations = {
             sort_by: 'Trier par',
             sort_asc: 'Prix croissant',
             sort_desc: 'Prix décroissant',
+            merchants_label: 'marchands',
+            compare_label: 'Comparer',
+            from_label: 'à partir de',
         },
         product: {
             home: 'ACCUEIL',
@@ -75,6 +78,15 @@ export const translations = {
             read_less: 'Voir moins ↑',
             shipping: 'Livraison',
             shipping_confirm: 'À confirmer*',
+            // Comparaison multi-marchands ({n} = nombre d'offres)
+            compare_offers: 'Comparez {n} offres',
+            offers_title: '{n} offres',
+            offer_title: 'Offre',
+            best_price: 'Meilleur prix',
+            not_found_title: 'Produit non trouvé',
+            not_found_region: 'Désolé, nous ne trouvons pas ce produit dans votre région.',
+            back: 'Retour aux produits',
+            from_label: 'à partir de',
         },
         merchants: {
             title: 'Nos Marchands',
@@ -206,6 +218,9 @@ export const translations = {
             sort_by: 'Sort by',
             sort_asc: 'Price ascending',
             sort_desc: 'Price descending',
+            merchants_label: 'merchants',
+            compare_label: 'Compare',
+            from_label: 'from',
         },
         product: {
             home: 'HOME',
@@ -226,6 +241,15 @@ export const translations = {
             read_less: 'Read less ↑',
             shipping: 'Shipping',
             shipping_confirm: 'To be confirmed*',
+            // Multi-merchant comparison ({n} = number of offers)
+            compare_offers: 'Compare {n} offers',
+            offers_title: '{n} offers',
+            offer_title: 'Offer',
+            best_price: 'Best price',
+            not_found_title: 'Product not found',
+            not_found_region: 'Sorry, we cannot find this product in your region.',
+            back: 'Back to products',
+            from_label: 'from',
         },
         merchants: {
             title: 'Our Partner',
