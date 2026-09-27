@@ -91,6 +91,74 @@ export interface ListProductsResponse {
   nextPageToken?: string
 }
 
+// --- Rattachement d'un marchand au CSS ------------------------------------
+//
+// Remplace `content/v2.1/{css}/csses/{css}/updatelabels`, supprimé avec la
+// Content API le 18 août 2026. Il n'existe PAS de sous-API `css` dans la
+// Merchant API : le modèle a changé de nature. Un fournisseur (ici Lynq, en
+// tant que CSS) *propose un service* au compte du marchand, qui l'approuve
+// ensuite — d'où le `handshake` renvoyé.
+
+export interface AccountServiceHandshake {
+  /** Qui doit agir ensuite. */
+  actor?: 'ACTOR_UNSPECIFIED' | 'ACCOUNT' | 'OTHER_PARTY'
+  approvalState?:
+    | 'APPROVAL_STATE_UNSPECIFIED'
+    | 'PENDING'
+    | 'WAITING'
+    | 'ESTABLISHED'
+    | 'REJECTED'
+}
+
+export interface AccountService {
+  /** Format: accounts/{account}/services/{service} */
+  name?: string
+  provider?: string
+  providerDisplayName?: string
+  handshake?: AccountServiceHandshake
+  /** Payload volontairement vide côté Google : le type porte l'information. */
+  comparisonShopping?: Record<string, never>
+}
+
+/**
+ * Propose à un marchand que Lynq gère son compte en tant que CSS.
+ *
+ * `cssAccountId` vient de LYNQ_CSS_DOMAIN_ID. La Merchant API attend une
+ * référence de la forme `providers/{id}` ; on accepte aussi une valeur déjà
+ * préfixée pour rester tolérant si la variable change de format.
+ */
+export async function proposeComparisonShoppingService(params: {
+  merchantAccountId: string | number
+  cssAccountId: string
+}): Promise<AccountService> {
+  const token = await getMerchantAccessToken()
+
+  const raw = params.cssAccountId.trim()
+  const provider = /^(providers|accounts)\//.test(raw) ? raw : `providers/${raw}`
+
+  const res = await fetch(
+    `${MERCHANT_API_BASE}/accounts/v1/accounts/${params.merchantAccountId}/services:propose`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider,
+        accountService: { comparisonShopping: {} },
+      }),
+    }
+  )
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Merchant API services.propose ${res.status}: ${body}`)
+  }
+
+  return (await res.json()) as AccountService
+}
+
 /**
  * Récupère UNE page de produits d'un compte GMC via la Merchant API.
  * pageSize max = 1000 (borné par Google).

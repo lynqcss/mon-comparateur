@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
-import path from 'path'
-import { google } from 'googleapis'
+import { proposeComparisonShoppingService } from '@/lib/googleClient'
 
 export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('Authorization')
@@ -51,33 +50,24 @@ export async function POST(req: NextRequest) {
             })
         }
 
-        const keyFile = path.join(process.cwd(), 'config', 'service-account.json')
-        const auth = new google.auth.GoogleAuth({
-            keyFile,
-            scopes: ['https://www.googleapis.com/auth/content'],
-        })
-        const authClient = await auth.getClient()
-        const tokenResponse = await authClient.getAccessToken()
-        const accessToken = tokenResponse.token
-
+        // Rattachement CSS via la Merchant API : Lynq propose son service de
+        // comparison shopping au compte du marchand, qui doit ensuite
+        // l'approuver (d'ou l'etat renvoye dans `handshake`).
         const results = []
 
         for (const merchantId of merchantIds) {
             try {
-                const switchResponse = await fetch(
-                    `https://shoppingcontent.googleapis.com/content/v2.1/${cssDomainId}/csses/${cssDomainId}/updatelabels`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ merchantId }),
-                    }
-                )
+                const service = await proposeComparisonShoppingService({
+                    merchantAccountId: merchantId,
+                    cssAccountId: cssDomainId,
+                })
 
-                const switchData = await switchResponse.json()
-                results.push({ merchantId, status: 'requested', data: switchData })
+                results.push({
+                    merchantId,
+                    status: 'requested',
+                    approvalState: service.handshake?.approvalState ?? null,
+                    data: service,
+                })
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err)
                 console.error(`CSS switch error for merchant ${merchantId}:`, message)
