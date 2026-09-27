@@ -4,7 +4,7 @@
 // (308) vers la fiche canonique correspondante.
 import type { Metadata } from 'next'
 import Link from '@/app/components/AppLink'
-import { redirect } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import ExpandableDescription from '@/app/components/ExpandableDescription'
 import { getTranslation } from '@/lib/i18n'
@@ -97,7 +97,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     }
     // Si ce produit a en fait un GTIN, on redirige vers la fiche canonique.
     if (data.gtin && data.gtin.trim() !== '') {
-      redirect(`/product/${encodeURIComponent(data.gtin)}?${qs}`)
+      permanentRedirect(`/product/${encodeURIComponent(data.gtin)}?${qs}`)
     }
     offers = [data]
   } else {
@@ -140,7 +140,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           const canonical = legacy.gtin && legacy.gtin.trim() !== ''
             ? encodeURIComponent(legacy.gtin)
             : `id-${legacy.id}`
-          redirect(`/product/${canonical}?${qs}`)
+          permanentRedirect(`/product/${canonical}?${qs}`)
         }
       }
 
