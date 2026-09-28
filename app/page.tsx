@@ -1,6 +1,7 @@
 import Link from "@/app/components/AppLink";
 import { getTranslation } from "@/lib/i18n";
 import GoogleShoppingMockup from "./components/GoogleShoppingMockup";
+import ComparisonShowcase from "./components/ComparisonShowcase";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -69,6 +70,13 @@ export default async function Home({ searchParams }: HomeProps) {
             <p className="mt-4 text-xs text-zinc-400">
               {t.home.search_footer}
             </p>
+          </div>
+
+          <div className="mx-auto mt-16 max-w-5xl">
+            <ComparisonShowcase
+              labels={t.home.showcase}
+              locale={selectedLang === 'fr' ? 'fr-FR' : 'en-IE'}
+            />
           </div>
         </div>
       </section>
