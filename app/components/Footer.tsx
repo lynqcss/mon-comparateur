@@ -9,9 +9,18 @@ export default function Footer() {
     const lang = searchParams.get('lang') || 'fr'
     const t = getTranslation(lang)
 
+    // Ne propager QUE la langue et le pays, et seulement s'ils sont valides.
+    // Recopier toute la query string faisait hériter chaque lien du pied de
+    // page des filtres de /products (`/terms?brands=...&page=...`) : autant
+    // d'URLs uniques, jamais en cache, qu'un crawler suivait par milliers.
     const buildUrl = (path: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        return `${path}?${params.toString()}`
+        const next = new URLSearchParams()
+        const country = searchParams.get('country')
+        const currentLang = searchParams.get('lang')
+        if (country && /^[A-Za-z]{2}$/.test(country)) next.set('country', country)
+        if (currentLang === 'fr' || currentLang === 'en') next.set('lang', currentLang)
+        const qs = next.toString()
+        return qs ? `${path}?${qs}` : path
     }
 
     return (

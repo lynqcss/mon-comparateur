@@ -15,11 +15,13 @@ export default function Header() {
 
     // Helper to preserve ONLY lang and country in links (resetting filters)
     const buildUrl = (path: string) => {
-        const current = new URLSearchParams(searchParams.toString())
         const next = new URLSearchParams()
-        if (current.has('country')) next.set('country', current.get('country')!)
-        if (current.has('lang')) next.set('lang', current.get('lang')!)
-        return `${path}?${next.toString()}`
+        const country = searchParams.get('country')
+        const currentLang = searchParams.get('lang')
+        if (country && /^[A-Za-z]{2}$/.test(country)) next.set('country', country)
+        if (currentLang === 'fr' || currentLang === 'en') next.set('lang', currentLang)
+        const qs = next.toString()
+        return qs ? `${path}?${qs}` : path
     }
 
     return (
