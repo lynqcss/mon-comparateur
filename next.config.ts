@@ -16,6 +16,17 @@ import type { NextConfig } from "next";
 const PUBLIC_PAGE_CACHE =
   "public, s-maxage=3600, stale-while-revalidate=86400";
 
+// En production, Next réécrit le `Cache-Control` des pages dynamiques en
+// `private, no-store` et écrase celui défini ici (constaté sur Vercel : toutes
+// les pages sortaient en MISS). `CDN-Cache-Control` n'est pas touché par Next,
+// est prioritaire pour le CDN de Vercel, puis est transmis tel quel à
+// Cloudflare. Le navigateur, lui, continue de voir `no-store` : seul le cache
+// partagé garde la page.
+const PUBLIC_PAGE_HEADERS = [
+  { key: "Cache-Control", value: PUBLIC_PAGE_CACHE },
+  { key: "CDN-Cache-Control", value: PUBLIC_PAGE_CACHE },
+];
+
 // Ferme l'accès au site par l'URL `*.vercel.app`, qui contourne Cloudflare
 // (et donc le filtrage des bots). Volontairement implémenté ici et non dans
 // le middleware : une règle de `redirects()` est compilée dans la couche de
@@ -44,19 +55,19 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/",
-        headers: [{ key: "Cache-Control", value: PUBLIC_PAGE_CACHE }],
+        headers: PUBLIC_PAGE_HEADERS,
       },
       {
         source: "/:path(products|merchants|join|legal|privacy|cookies|terms)",
-        headers: [{ key: "Cache-Control", value: PUBLIC_PAGE_CACHE }],
+        headers: PUBLIC_PAGE_HEADERS,
       },
       {
         source: "/product/:path*",
-        headers: [{ key: "Cache-Control", value: PUBLIC_PAGE_CACHE }],
+        headers: PUBLIC_PAGE_HEADERS,
       },
       {
         source: "/category/:path*",
-        headers: [{ key: "Cache-Control", value: PUBLIC_PAGE_CACHE }],
+        headers: PUBLIC_PAGE_HEADERS,
       },
     ];
   },
