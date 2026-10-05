@@ -1,5 +1,6 @@
 // app/products/page.tsx
 import type { Metadata } from 'next'
+import { notFound, redirect } from 'next/navigation'
 import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import SortDropdown from '@/app/components/SortDropdown'
@@ -8,6 +9,79 @@ import { formatPrice } from '@/lib/utils'
 import { getRootCategories, getCategoryIdsForFilter, getBrands } from '@/lib/facets'
 
 const PAGE_SIZE = 36
+
+// --- Garde-fou sur l'espace d'URL -------------------------------------------
+//
+// Chaque URL distincte est une entrée de cache distincte, donc un rendu complet
+// (et ses requêtes Supabase) la première fois. Sans borne, un crawler peut en
+// fabriquer une infinité : `?page=999999`, `?foo=1`, `?lang=zz`, 40 marques
+// cochées... On refuse ces URLs AVANT toute requête en base :
+//   - paramètre inconnu  -> redirection vers la même URL sans lui (les liens
+//     entrants du type `?utm_source=` retombent ainsi sur la page en cache) ;
+//   - valeur invalide ou hors bornes -> 404.
+const ALLOWED_PARAMS = new Set([
+  'page', 'categoryId', 'rootCategory', 'categoryPath', 'q', 'brands',
+  'minPrice', 'maxPrice', 'country', 'lang', 'sort',
+])
+const MULTI_PARAMS = new Set(['brands'])
+const MAX_PAGE = 100
+const MAX_BRANDS = 5
+const MAX_TEXT_LENGTH = 400
+const MAX_PRICE = 1_000_000
+
+type RawParams = Record<string, string | string[] | undefined>
+
+function isValidProductsQuery(raw: RawParams): boolean {
+  for (const [key, value] of Object.entries(raw)) {
+    if (Array.isArray(value) && !MULTI_PARAMS.has(key)) return false
+    const values = Array.isArray(value) ? value : value === undefined ? [] : [value]
+    if (values.some(v => v.length > MAX_TEXT_LENGTH)) return false
+  }
+
+  const one = (key: string) => raw[key] as string | undefined
+  const isInt = (v: string) => /^\d{1,9}$/.test(v)
+  const isPrice = (v: string) =>
+    v === '' || (/^\d{1,7}([.,]\d{1,2})?$/.test(v) && Number(v.replace(',', '.')) <= MAX_PRICE)
+
+  const page = one('page')
+  if (page !== undefined && !(isInt(page) && Number(page) >= 1 && Number(page) <= MAX_PAGE)) return false
+
+  const categoryId = one('categoryId')
+  if (categoryId !== undefined && !isInt(categoryId)) return false
+
+  const country = one('country')
+  if (country !== undefined && !/^[A-Za-z]{2}$/.test(country)) return false
+
+  const lang = one('lang')
+  if (lang !== undefined && lang !== 'fr' && lang !== 'en') return false
+
+  const sort = one('sort')
+  if (sort !== undefined && sort !== '' && sort !== 'price_asc' && sort !== 'price_desc') return false
+
+  for (const key of ['minPrice', 'maxPrice']) {
+    const price = one(key)
+    if (price !== undefined && !isPrice(price)) return false
+  }
+
+  const brands = raw.brands === undefined ? [] : Array.isArray(raw.brands) ? raw.brands : [raw.brands]
+  if (brands.length > MAX_BRANDS || new Set(brands).size !== brands.length) return false
+
+  return true
+}
+
+function guardProductsQuery(raw: RawParams) {
+  const unknown = Object.keys(raw).filter(key => !ALLOWED_PARAMS.has(key))
+  if (unknown.length > 0) {
+    const sp = new URLSearchParams()
+    for (const [key, value] of Object.entries(raw)) {
+      if (!ALLOWED_PARAMS.has(key) || value === undefined) continue
+      for (const v of Array.isArray(value) ? value : [value]) sp.append(key, v)
+    }
+    const qs = sp.toString()
+    redirect(qs ? `/products?${qs}` : '/products')
+  }
+  if (!isValidProductsQuery(raw)) notFound()
+}
 
 // Toutes les combinaisons de filtres (marque × catégorie × page × recherche)
 // pointent vers la même URL canonique : l'espace d'URL que les crawlers
@@ -25,7 +99,6 @@ type ProductsPageProps = {
     q?: string
     brand?: string
     brands?: string | string[]
-    merchants?: string | string[]
     minPrice?: string
     maxPrice?: string
     country?: string
@@ -77,6 +150,7 @@ const ROOT_ICONS: Record<string, string> = {
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const params = await searchParams
+  guardProductsQuery(params as RawParams)
 
   const page = Math.max(Number(params.page || '1') || 1, 1)
   const categoryId = params.categoryId ? Number(params.categoryId) : null
@@ -91,11 +165,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   }
 
   const selectedBrands = getArray(params.brands)
-  // NOTE: filtre par marchand = "plus tard" dans le brief. Le param est conservé
-  // pour ne pas casser les URLs, mais n'est pas appliqué sur la vue groupée.
-  const selectedMerchants = getArray(params.merchants)
-  const minPrice = params.minPrice ? Number(params.minPrice) : null
-  const maxPrice = params.maxPrice ? Number(params.maxPrice) : null
+  const minPrice = params.minPrice ? Number(params.minPrice.replace(',', '.')) : null
+  const maxPrice = params.maxPrice ? Number(params.maxPrice.replace(',', '.')) : null
 
   // Pays = filtre de pays (défaut FR). Pass-through pour supporter d'autres
   // pays (et un pays de test isolé) sans casser FR/PL.
@@ -156,7 +227,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     if (maxPrice) sp.set('maxPrice', String(maxPrice))
     if (sort) sp.set('sort', sort)
     selectedBrands.forEach(b => sp.append('brands', b))
-    selectedMerchants.forEach(m => sp.append('merchants', m))
 
     Object.entries(extra).forEach(([k, v]) => {
       if (v === null) sp.delete(k)
@@ -233,7 +303,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.categories}</h3>
             <div className="space-y-1">
               <Link
-                rel="nofollow" href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, merchants: null, minPrice: null, maxPrice: null, q: null })}
+                rel="nofollow" href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, minPrice: null, maxPrice: null, q: null })}
                 className={`block rounded-lg px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
               >
                 {t.products.all_offers}
@@ -259,7 +329,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             {rootCategory && <input type="hidden" name="rootCategory" value={rootCategory} />}
             {sort && <input type="hidden" name="sort" value={sort} />}
             {selectedBrands.map(b => <input type="hidden" key={b} name="brands" value={b} />)}
-            {selectedMerchants.map(m => <input type="hidden" key={m} name="merchants" value={m} />)}
 
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.budget}</h3>
             <div className="space-y-2">
@@ -368,7 +437,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               <div className="mb-4 text-4xl">🔎</div>
               <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.products.no_results}</h3>
               <p className="mt-2 text-sm text-zinc-500">{t.products.no_results_p}</p>
-              <Link prefetch={false} rel="nofollow" href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, merchants: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
+              <Link prefetch={false} rel="nofollow" href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
                 {t.products.reset}
               </Link>
             </div>
