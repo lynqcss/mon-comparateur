@@ -2,7 +2,17 @@
 
 import React, { useRef, useState } from 'react'
 
-export default function GoogleShoppingMockup() {
+type MockupLabels = {
+    ad: string
+    boosted: string
+    byLynq: string
+    viewOffer: string
+    freeShipping: string
+    shippingFee: string
+    titles: readonly string[]
+}
+
+export default function GoogleShoppingMockup({ labels }: { labels: MockupLabels }) {
     const scrollRef = useRef<HTMLDivElement>(null)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
 
@@ -26,27 +36,27 @@ export default function GoogleShoppingMockup() {
 
     const ads = [
         {
-            title: 'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral...',
+            title: labels.titles[0],
             price: '2 299,99 €',
             merchant: 'topachat.com',
-            shipping: 'Livraison gratuite',
+            shipping: labels.freeShipping,
             image: 'https://media.topachat.com/media/s400/673c6763958c922f7e7e5b30.jpg',
             reviews: '9k'
         },
         {
-            title: 'Apple MacBook Air M4 15 pouces (2025) - Minuit - 16 Go',
+            title: labels.titles[1],
             price: '1 199,99 €',
             merchant: 'topachat.com',
-            shipping: 'Livraison gratuite',
+            shipping: labels.freeShipping,
             image: 'https://media.topachat.com/media/s400/67cebea8cc2eef23de10ab6c.jpg',
             reviews: '4k'
         },
         {
-            title: 'Apple MacBook Air M4 13 pouces (2025) - Bleu Ciel - 16 Go',
+            title: labels.titles[2],
             price: '1 149,99 €',
             oldPrice: '1249 €',
             merchant: 'topachat.com',
-            shipping: '+ 4,99 € de frais',
+            shipping: labels.shippingFee,
             image: 'https://media.topachat.com/media/s400/67cea2be038e547c37752de6.jpg',
             reviews: '7k'
         }
@@ -68,10 +78,10 @@ export default function GoogleShoppingMockup() {
 
             <div className="p-8">
                 <div className="flex items-center gap-2 mb-6 text-sm">
-                    <span className="font-bold text-zinc-900 dark:text-white">Annonce</span>
+                    <span className="font-bold text-zinc-900 dark:text-white">{labels.ad}</span>
                     <span className="text-zinc-400">Shopping</span>
                     <div className="h-4 w-[1px] bg-zinc-200 dark:bg-zinc-700 mx-2" />
-                    <span className="text-zinc-500 italic">Boosté par Lynq CSS</span>
+                    <span className="text-zinc-500 italic">{labels.boosted}</span>
                 </div>
 
                 <div className="relative group w-full">
@@ -102,10 +112,10 @@ export default function GoogleShoppingMockup() {
 
                                     <div className="mt-auto pt-3 flex flex-col gap-2">
                                         <div className="text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8]">
-                                            Par Lynq
+                                            {labels.byLynq}
                                         </div>
                                         <div className="md:hidden text-[11px] sm:text-xs text-[#1a0dab] dark:text-[#8ab4f8] hover:underline cursor-pointer">
-                                            Voir l'offre
+                                            {labels.viewOffer}
                                         </div>
                                     </div>
                                 </div>

@@ -4,6 +4,19 @@ export type Language = 'fr' | 'en'
 
 export const translations = {
     fr: {
+        mockup: {
+            ad: 'Annonce',
+            boosted: 'Boosté par Lynq CSS',
+            byLynq: 'Par Lynq',
+            viewOffer: 'Voir l\'offre',
+            freeShipping: 'Livraison gratuite',
+            shippingFee: '+ 4,99 € de frais',
+            titles: [
+                'Apple MacBook Pro M4 Pro 14" (2024) - Noir sidéral...',
+                'Apple MacBook Air M4 15 pouces (2025) - Minuit - 16 Go',
+                'Apple MacBook Air M4 13 pouces (2025) - Bleu Ciel - 16 Go',
+            ],
+        },
         nav: {
             products: 'Tous nos produits',
             merchants: 'Nos marchands',
@@ -172,7 +185,7 @@ export const translations = {
             cta_secondary: 'Découvrir nos avantages',
             benefits_title: 'Pourquoi choisir le CSS Lynq ?',
             benefit1_title: 'Gagnez 20% sur vos CPC',
-            benefit1_desc: 'Notre avantage CSS Partner s\'applique immédiatement. Pour le même budget, vous obtenez +20% de clics en plus. C\'est mathématique.',
+            benefit1_desc: 'Notre avantage CSS Partner s\'applique immédiatement. Pour le même budget, vous obtenez jusqu\'à 25% de clics en plus. C\'est mathématique.',
             benefit2_title: 'Zéro Interruption',
             benefit2_desc: 'Aucune campagne à recréer. Tout continue de tourner comme avant, sans coupure, sans perte d\'historique, juste moins cher.',
             benefit3_title: 'Liberté Totale',
@@ -211,6 +224,19 @@ export const translations = {
         }
     },
     en: {
+        mockup: {
+            ad: 'Sponsored',
+            boosted: 'Powered by Lynq CSS',
+            byLynq: 'By Lynq',
+            viewOffer: 'View offer',
+            freeShipping: 'Free delivery',
+            shippingFee: '+ €4.99 delivery',
+            titles: [
+                'Apple MacBook Pro M4 Pro 14" (2024) - Space Black...',
+                'Apple MacBook Air M4 15-inch (2025) - Midnight - 16 GB',
+                'Apple MacBook Air M4 13-inch (2025) - Sky Blue - 16 GB',
+            ],
+        },
         nav: {
             products: 'All Products',
             merchants: 'Our Merchants',
@@ -379,7 +405,7 @@ export const translations = {
             cta_secondary: 'Discover Benefits',
             benefits_title: 'Why Choose Lynq CSS?',
             benefit1_title: 'Save 20% on CPC',
-            benefit1_desc: 'Our certified CSS advantage applies immediately. For the same budget, you get +20% more clicks. It\'s pure math.',
+            benefit1_desc: 'Our certified CSS advantage applies immediately. For the same budget, you get up to 25% more clicks. It\'s pure math.',
             benefit2_title: 'Zero Interruption',
             benefit2_desc: 'No campaigns to recreate. Everything keeps running as before, no downtime, no history loss, just cheaper.',
             benefit3_title: 'Total Freedom',
