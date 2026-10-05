@@ -100,3 +100,48 @@ jobs:
             echo "::error::ALERTE : ${ORIGIN} requêtes ont atteint Vercel en 24 h (seuil ${THRESHOLD}). Ouvrir Cloudflare > Security et activer Under Attack Mode si le trafic est anormal."
             exit 1
           fi
+
+      # Qui consomme ? Affiché à chaque exécution, alerte ou non, pour qu'une
+      # alerte dise tout de suite d'où vient le trafic (robot, chemin, réseau).
+      - name: Détail du trafic (24 h)
+        if: always()
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -uo pipefail
+          UNTIL=$(date -u +%Y-%m-%dT%H:00:00Z)
+          SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:00:00Z)
+
+          breakdown() {
+            local title="$1" dims="$2" order="$3" limit="$4"
+            local query="query(\$zone: String!, \$since: Time!, \$until: Time!) {
+              viewer { zones(filter: {zoneTag: \$zone}) {
+                httpRequestsAdaptiveGroups(
+                  limit: ${limit}, orderBy: [${order}],
+                  filter: {datetime_geq: \$since, datetime_lt: \$until, requestSource: \"eyeball\"}
+                ) { count dimensions { ${dims} } }
+              } }
+            }"
+            local body response
+            body=$(jq -n --arg q "$query" --arg zone "$CF_ZONE" --arg since "$SINCE" --arg until "$UNTIL" \
+              '{query: $q, variables: {zone: $zone, since: $since, until: $until}}')
+            response=$(curl -sS https://api.cloudflare.com/client/v4/graphql \
+              -H "Authorization: Bearer ${CF_TOKEN}" -H "Content-Type: application/json" --data "$body")
+            echo ""
+            echo "== ${title}"
+            if [ "$(echo "$response" | jq '.errors | length // 0')" != "0" ]; then
+              echo "  (indisponible : $(echo "$response" | jq -c '.errors[0].message'))"
+              return 0
+            fi
+            echo "$response" | jq -r '.data.viewer.zones[0].httpRequestsAdaptiveGroups[]
+              | "  \(.count)\t\(.dimensions | to_entries | map(.value | tostring) | join(" | "))"'
+          }
+
+          breakdown "Par heure (UTC)" "datetimeHour" "datetimeHour_ASC" 30
+          breakdown "Par code de réponse" "edgeResponseStatus" "count_DESC" 15
+          breakdown "Par robot / navigateur" "userAgent" "count_DESC" 20
+          breakdown "Par réseau" "clientASNDescription" "count_DESC" 15
+          breakdown "Par pays" "clientCountryName" "count_DESC" 10
+          breakdown "Par chemin" "clientRequestPath" "count_DESC" 25
+          breakdown "Par statut de cache et code" "cacheStatus edgeResponseStatus" "count_DESC" 20
