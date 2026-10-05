@@ -44,9 +44,13 @@ const nextConfig: NextConfig = {
     if (!CANONICAL_HOST) return [];
     return [
       {
-        source: "/:path*",
+        // /api est exclu : le cron Vercel et l'auto-enchaînement de la synchro
+        // s'appellent sur l'hôte .vercel.app, ne suivent pas les redirections
+        // et perdraient leur en-tête Authorization. Ces routes sont de toute
+        // façon protégées par secret et ne sont pas explorées par les crawlers.
+        source: "/:path((?!api/).*)",
         has: [{ type: "host", value: ".*\\.vercel\\.app" }],
-        destination: `https://${CANONICAL_HOST}/:path*`,
+        destination: `https://${CANONICAL_HOST}/:path`,
         permanent: false,
       },
     ];
