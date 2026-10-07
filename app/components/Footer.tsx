@@ -44,6 +44,7 @@ export default function Footer() {
                             <li><Link prefetch={false} href={buildUrl('/products')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.nav.products}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/merchants')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.nav.merchants}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/join')} className="hover:text-zinc-900 dark:hover:text-white transition-colors underline decoration-zinc-200 underline-offset-4">{t.nav.diffuse}</Link></li>
+                            <li><Link prefetch={false} href={buildUrl('/how-it-works')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.how_it_works}</Link></li>
                         </ul>
                     </div>
                     <div>
