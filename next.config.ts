@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
         headers: PUBLIC_PAGE_HEADERS,
       },
       {
-        source: "/:path(products|merchants|join|legal|privacy|cookies|terms)",
+        source: "/:path(products|merchants|join|legal|privacy|cookies|terms|contact)",
         headers: PUBLIC_PAGE_HEADERS,
       },
       {

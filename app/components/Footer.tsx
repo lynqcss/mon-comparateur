@@ -53,6 +53,7 @@ export default function Footer() {
                             <li><Link prefetch={false} href={buildUrl('/privacy')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.privacy}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/cookies')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.cookies}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/legal')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.legal_mentions}</Link></li>
+                            <li><Link prefetch={false} href={buildUrl('/contact')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.contact}</Link></li>
                         </ul>
                     </div>
                 </div>

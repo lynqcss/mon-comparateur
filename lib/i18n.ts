@@ -31,6 +31,7 @@ export const translations = {
             terms: 'Conditions Générales',
             cookies: 'Utilisation des Cookies',
             legal_mentions: 'Mentions Légales',
+            contact: 'Contact',
         },
         home: {
             hero_title: 'Recherchez, comparez',
@@ -251,6 +252,7 @@ export const translations = {
             terms: 'Terms of Use',
             cookies: 'Cookie Policy',
             legal_mentions: 'Legal Mentions',
+            contact: 'Contact',
         },
         home: {
             hero_title: 'Search, compare',
