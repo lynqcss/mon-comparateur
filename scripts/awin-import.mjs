@@ -144,7 +144,9 @@ function httpsUrl(raw) {
  * d'achat, sans image, sans prix, hors stock ou dans une autre devise.
  */
 export function mapProduct(record, { merchantId, country, runId }) {
-  const title = String(record.product_name ?? '').trim()
+  // Certains marchands ajoutent une étiquette interne en fin de titre
+  // (« Cable PS/2 5m #DEFAULT ») : on la retire.
+  const title = String(record.product_name ?? '').trim().replace(/\s+#[A-Z0-9_]+$/, '').trim()
   const link = httpsUrl(record.aw_deep_link)
   const image = httpsUrl(record.merchant_image_url) ?? httpsUrl(record.aw_image_url)
   const price = parsePrice(record.search_price)

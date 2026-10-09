@@ -81,6 +81,8 @@ test('une offre valide est convertie, les offres non présentables sont écarté
   assert.equal(mapProduct(offer({ merchant_image_url: '', aw_image_url: '' }), ctx), null, 'sans image')
   assert.equal(mapProduct(offer({ product_name: ' ' }), ctx), null, 'sans titre')
   assert.equal(mapProduct(offer({ ean: 'x', product_GTIN: '4006381333931' }), ctx).gtin, '4006381333931')
+  assert.equal(mapProduct(offer({ product_name: 'Cable PS/2 5m M/M #DEFAULT' }), ctx).title, 'Cable PS/2 5m M/M')
+  assert.equal(mapProduct(offer({ product_name: 'Clé USB #1 du marché' }), ctx).title, 'Clé USB #1 du marché')
 })
 
 test('sélection : plafond respecté, codes-barres en premier, doublons écartés', async () => {
