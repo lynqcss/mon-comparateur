@@ -35,6 +35,11 @@ export default function Footer() {
                         <p className="max-w-xs text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
                             {t.footer.description}
                         </p>
+                        <address className="mt-4 text-sm not-italic leading-relaxed text-zinc-500 dark:text-zinc-400">
+                            Lynq CSS
+                            <br />
+                            9 cours du Médoc, 33300 Bordeaux, France
+                        </address>
                     </div>
                     <div>
                         <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-white">{t.footer.platform}</h4>

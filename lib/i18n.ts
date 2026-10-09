@@ -26,7 +26,7 @@ export const translations = {
             platform: 'Plateforme',
             legal: 'Légal',
             description: 'Votre partenaire Comparison Shopping Service pour Google Shopping. Optimisez votre visibilité et réduisez vos coûts.',
-            rights: 'Tous droits réservés. Conforme Google CSS.',
+            rights: 'Tous droits réservés.',
             privacy: 'Confidentialité',
             terms: 'Conditions Générales',
             cookies: 'Utilisation des Cookies',
@@ -40,7 +40,6 @@ export const translations = {
             hero_subtitle: 'Trouvez les meilleurs prix parmi des millions d\'articles dans des centaines de boutiques en ligne.',
             search_placeholder: 'Que recherchez-vous aujourd\'hui ?',
             search_button: 'Rechercher',
-            search_footer: 'Recherchez, trouvez et comparez des millions d\'articles dans des centaines de boutiques en ligne',
             showcase: {
                 query: 'Smartphone Orion 5 256 Go',
                 placeholder: 'Que recherchez-vous aujourd\'hui ?',
@@ -87,7 +86,7 @@ export const translations = {
             },
             categories_title: 'Parcourir par catégorie',
             categories_subtitle: 'Découvrez les meilleures offres dans chaque univers.',
-            view_all: 'Voir tout →',
+            view_all: 'Tous les produits',
             about_title: 'Pourquoi utiliser un partenaire Google CSS ?',
             about_p1: 'Lynq CSS est un service de comparaison de prix (CSS) certifié par Google. En utilisant notre plateforme, vous bénéficiez d\'une visibilité accrue et d\'avantages compétitifs sur Google Shopping.',
             about_features: [
@@ -248,7 +247,7 @@ export const translations = {
             platform: 'Platform',
             legal: 'Legal',
             description: 'Your Comparison Shopping Service partner for Google Shopping. Optimize your visibility and reduce your costs.',
-            rights: 'All rights reserved. Google CSS Compliant.',
+            rights: 'All rights reserved.',
             privacy: 'Privacy Policy',
             terms: 'Terms of Use',
             cookies: 'Cookie Policy',
@@ -262,7 +261,6 @@ export const translations = {
             hero_subtitle: 'Find the best prices among millions of items in hundreds of online stores.',
             search_placeholder: 'What are you looking for today?',
             search_button: 'Search',
-            search_footer: 'Search, find and compare millions of items in hundreds of online stores',
             showcase: {
                 query: 'Orion 5 smartphone 256 GB',
                 placeholder: 'What are you looking for today?',
@@ -309,7 +307,7 @@ export const translations = {
             },
             categories_title: 'Browse by category',
             categories_subtitle: 'Discover the best offers in every universe.',
-            view_all: 'View All →',
+            view_all: 'All products',
             about_title: 'Why use a Google CSS partner?',
             about_p1: 'Lynq CSS is a Google-certified Comparison Shopping Service (CSS). By using our platform, you benefit from increased visibility and competitive advantages on Google Shopping.',
             about_features: [
