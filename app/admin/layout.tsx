@@ -6,9 +6,9 @@ export default function AdminLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen md:flex">
             <AdminNav />
-            {children}
+            <div className="min-w-0 flex-1">{children}</div>
         </div>
     )
 }

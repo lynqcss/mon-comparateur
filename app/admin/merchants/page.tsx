@@ -213,12 +213,6 @@ export default function MerchantsPage() {
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white">Admin CSS</h1>
           <p className="mt-2 text-zinc-500 dark:text-zinc-400">Gerez vos marchands partenaires et synchronisez leurs catalogues produits.</p>
         </div>
-        <Link
-          href="/admin/onboarding"
-          className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md"
-        >
-          📋 Demandes d&apos;onboarding
-        </Link>
       </div>
 
       {/* KPI Cards */}
