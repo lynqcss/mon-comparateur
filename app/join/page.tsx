@@ -2,7 +2,7 @@ import Link from '@/app/components/AppLink'
 import { getTranslation } from '@/lib/i18n'
 import GoogleShoppingMockup from '@/app/components/GoogleShoppingMockup'
 import AuctionMechanism from '@/app/components/AuctionMechanism'
-import ExpandableFAQ from '@/app/components/ExpandableFAQ'
+import FaqAccordion from '@/app/components/FaqAccordion'
 
 type Props = {
     searchParams: Promise<{ lang?: string; country?: string }>
@@ -12,27 +12,38 @@ export default async function JoinPage({ searchParams }: Props) {
     const { lang } = await searchParams
     const selectedLang = lang || 'fr'
     const t = getTranslation(selectedLang)
+    const isEn = selectedLang === 'en'
 
     return (
         <div className="flex flex-col bg-white dark:bg-zinc-950">
             {/* Hero Section */}
-            <section className="relative overflow-hidden pt-24 pb-32">
+            <section className="relative overflow-hidden pb-16 pt-16 sm:pb-20 sm:pt-20">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(60rem_50rem_at_top,theme(colors.zinc.100),white)] opacity-30 dark:bg-[radial-gradient(60rem_50rem_at_top,theme(colors.zinc.900),theme(colors.zinc.950))]" />
 
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-4xl text-center">
-                        <h1 className="text-4xl font-black tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl dark:text-white leading-[1.1]">
-                            {t.join.hero_title} <span className="text-gradient inline-block">{t.join.hero_title_gradient}</span>
+                    <div className="mx-auto max-w-3xl text-center">
+                        <p className="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0FA968] opacity-60 motion-reduce:hidden" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#0FA968]" />
+                            </span>
+                            {isEn ? 'For merchants' : 'Pour les marchands'}
+                        </p>
+                        <h1 className="text-balance text-4xl font-black leading-[1.1] tracking-tight text-zinc-900 dark:text-white sm:text-5xl lg:text-6xl">
+                            {t.join.hero_title} <span className="text-gradient">{t.join.hero_title_gradient}</span>
                         </h1>
-                        <p className="mt-8 text-xl leading-8 text-zinc-600 dark:text-zinc-400 font-medium max-w-2xl mx-auto">
+                        <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
                             {t.join.hero_subtitle}
                         </p>
-                        <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-                            <Link href="/onboarding" className="rounded-full bg-zinc-900 px-10 py-5 text-lg font-bold text-white shadow-2xl transition-all hover:bg-zinc-800 hover:scale-105 active:scale-95 dark:bg-white dark:text-zinc-900">
+                        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+                            <Link href="/onboarding" className="rounded-full bg-zinc-900 px-7 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-900">
                                 {t.join.cta_primary}
                             </Link>
-                            <a href="#benefits" className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white hover:underline">
-                                {t.join.cta_secondary} ↓
+                            <a href="#benefits" className="group inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-white">
+                                {t.join.cta_secondary}
+                                <svg className="h-4 w-4 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m-6-6l6 6 6-6" />
+                                </svg>
                             </a>
                         </div>
                     </div>
@@ -40,27 +51,27 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* Benefits Section */}
-            <section id="benefits" className="py-24 bg-zinc-50/50 dark:bg-zinc-900/20 shadow-inner">
+            <section id="benefits" className="scroll-mt-24 bg-zinc-50/60 py-20 dark:bg-zinc-900/20 sm:py-24">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="text-center mb-20">
-                        <h2 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white sm:text-4xl uppercase tracking-widest">
-                            {t.join.benefits_title}
-                        </h2>
-                    </div>
+                    <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+                        {t.join.benefits_title}
+                    </h2>
 
-                    <div className="grid gap-8 md:grid-cols-2">
+                    <div className="mt-12 grid gap-5 md:grid-cols-2">
                         {[
-                            { title: t.join.benefit1_title, desc: t.join.benefit1_desc, icon: '🚀' },
-                            { title: t.join.benefit2_title, desc: t.join.benefit2_desc, icon: '🛡️' },
-                            { title: t.join.benefit3_title, desc: t.join.benefit3_desc, icon: '📊' },
-                            { title: t.join.benefit4_title, desc: t.join.benefit4_desc, icon: '🎧' },
+                            { title: t.join.benefit1_title, desc: t.join.benefit1_desc, icon: 'M4 7l6 6 4-4 6 7m0 0v-5m0 5h-5' },
+                            { title: t.join.benefit2_title, desc: t.join.benefit2_desc, icon: 'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zm-3 9l2 2 4-4' },
+                            { title: t.join.benefit3_title, desc: t.join.benefit3_desc, icon: 'M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-3' },
+                            { title: t.join.benefit4_title, desc: t.join.benefit4_desc, icon: 'M4 13v-1a8 8 0 0116 0v1m-16 0a2 2 0 012-2h1v6H6a2 2 0 01-2-2zm16 0a2 2 0 00-2-2h-1v6h1a2 2 0 002-2zm0 2v1a4 4 0 01-4 4h-3' },
                         ].map((benefit, idx) => (
-                            <div key={idx} className="group relative rounded-3xl border border-zinc-100 bg-white p-10 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2 dark:border-zinc-800 dark:bg-zinc-900/50">
-                                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-50 text-3xl shadow-sm group-hover:scale-110 transition-transform dark:bg-zinc-800">
-                                    {benefit.icon}
+                            <div key={idx} className="group relative rounded-3xl border border-zinc-200/70 bg-white p-8 transition-all hover:-translate-y-1.5 hover:border-[#0FA968] hover:shadow-[0_30px_60px_-30px_rgba(24,24,27,0.25)] dark:border-zinc-800 dark:bg-zinc-900/50 sm:p-10">
+                                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 transition-colors group-hover:bg-[#0FA968] group-hover:text-white dark:bg-zinc-800 dark:text-white">
+                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d={benefit.icon} />
+                                    </svg>
                                 </div>
-                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">{benefit.title}</h3>
-                                <p className="text-zinc-500 dark:text-zinc-400 leading-relaxed font-medium">{benefit.desc}</p>
+                                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{benefit.title}</h3>
+                                <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{benefit.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -116,24 +127,24 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* FAQ Section */}
-            <section className="py-24 bg-zinc-50/30 dark:bg-zinc-900/10">
-                <div className="mx-auto max-w-5xl px-6 lg:px-8">
-                    <h2 className="text-center text-3xl font-black mb-12 dark:text-white uppercase tracking-widest">{t.join.faq_title}</h2>
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {[
-                            { q: t.join.faq_q1, a: t.join.faq_a1 },
-                            { q: t.join.faq_q2, a: t.join.faq_a2 },
-                            { q: t.join.faq_q3, a: t.join.faq_a3 },
-                            { q: t.join.faq_q4, a: t.join.faq_a4 },
-                            { q: t.join.faq_q5, a: t.join.faq_a5 },
-                            { q: t.join.faq_q6, a: t.join.faq_a6 },
-                            { q: t.join.faq_q7, a: t.join.faq_a7 },
-                            { q: t.join.faq_q8, a: t.join.faq_a8 },
-                            { q: t.join.faq_q9, a: t.join.faq_a9 },
-                            { q: t.join.faq_q10, a: t.join.faq_a10 },
-                        ].map((item, idx) => (
-                            <ExpandableFAQ key={idx} question={item.q} answer={item.a} />
-                        ))}
+            <section className="bg-zinc-50/60 py-20 dark:bg-zinc-900/10 sm:py-24">
+                <div className="mx-auto max-w-3xl px-6 lg:px-8">
+                    <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">{t.join.faq_title}</h2>
+                    <div className="mt-12">
+                        <FaqAccordion
+                            items={[
+                                { q: t.join.faq_q1, a: t.join.faq_a1 },
+                                { q: t.join.faq_q2, a: t.join.faq_a2 },
+                                { q: t.join.faq_q3, a: t.join.faq_a3 },
+                                { q: t.join.faq_q4, a: t.join.faq_a4 },
+                                { q: t.join.faq_q5, a: t.join.faq_a5 },
+                                { q: t.join.faq_q6, a: t.join.faq_a6 },
+                                { q: t.join.faq_q7, a: t.join.faq_a7 },
+                                { q: t.join.faq_q8, a: t.join.faq_a8 },
+                                { q: t.join.faq_q9, a: t.join.faq_a9 },
+                                { q: t.join.faq_q10, a: t.join.faq_a10 },
+                            ]}
+                        />
                     </div>
                 </div>
             </section>
