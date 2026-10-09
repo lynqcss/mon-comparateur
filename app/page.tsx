@@ -81,18 +81,11 @@ export default async function Home({ searchParams }: HomeProps) {
               </button>
             </form>
           </div>
-
-          <div className="mx-auto mt-16 max-w-5xl sm:mt-20">
-            <ComparisonShowcase
-              labels={t.home.showcase}
-              locale={isFr ? 'fr-FR' : 'en-IE'}
-            />
-          </div>
         </div>
       </section>
 
       {/* Rayons */}
-      <section className="pt-24 sm:pt-32">
+      <section className="pt-16 sm:pt-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -131,6 +124,16 @@ export default async function Home({ searchParams }: HomeProps) {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Vidéo de présentation */}
+      <section className="pt-24 sm:pt-32">
+        <div className="mx-auto max-w-5xl px-6 lg:px-8">
+          <ComparisonShowcase
+            labels={t.home.showcase}
+            locale={isFr ? 'fr-FR' : 'en-IE'}
+          />
         </div>
       </section>
 
