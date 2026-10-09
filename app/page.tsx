@@ -52,6 +52,13 @@ export default async function Home({ searchParams }: HomeProps) {
 
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
+            <p className="mb-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#0FA968] opacity-60 motion-reduce:hidden" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#0FA968]" />
+              </span>
+              {isFr ? 'Comparateur de prix' : 'Price comparison'}
+            </p>
             <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-6xl dark:text-white">
               {t.home.hero_title} <span className="text-gradient">{t.home.hero_title_gradient}</span>
             </h1>
@@ -59,7 +66,7 @@ export default async function Home({ searchParams }: HomeProps) {
               {t.home.hero_subtitle}
             </p>
 
-            <form action="/products" method="GET" className="mx-auto mt-10 flex w-full max-w-xl items-center gap-2 rounded-full border border-zinc-200 bg-white p-1.5 pl-5 shadow-[0_12px_40px_-12px_rgba(24,24,27,0.18)] transition-all focus-within:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-white">
+            <form action="/products" method="GET" className="mx-auto mt-10 flex w-full max-w-xl items-center gap-2 rounded-full border border-zinc-200 bg-white p-1.5 pl-5 shadow-[0_12px_40px_-12px_rgba(24,24,27,0.18)] transition-all focus-within:border-[#0FA968] focus-within:ring-4 focus-within:ring-[#0FA968]/15 dark:border-zinc-800 dark:bg-zinc-900">
               <input type="hidden" name="country" value={selectedCountry} />
               <input type="hidden" name="lang" value={selectedLang} />
               <svg className="h-[18px] w-[18px] shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -108,16 +115,16 @@ export default async function Home({ searchParams }: HomeProps) {
               <Link
                 key={cat.name}
                 href={buildUrl('/products', { rootCategory: cat.search })}
-                className="group flex flex-col justify-between gap-10 rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-white"
+                className="group flex flex-col justify-between gap-10 rounded-2xl border border-zinc-200 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[#0FA968] dark:border-zinc-800 dark:bg-zinc-900"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 transition-colors group-hover:bg-zinc-900 group-hover:text-white dark:bg-zinc-800 dark:text-white dark:group-hover:bg-white dark:group-hover:text-zinc-900">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 transition-colors group-hover:bg-[#0FA968] group-hover:text-white dark:bg-zinc-800 dark:text-white">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
                   </svg>
                 </span>
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-[15px] font-semibold text-zinc-900 dark:text-white">{cat.name}</span>
-                  <svg className="h-4 w-4 text-zinc-300 transition-all group-hover:translate-x-0.5 group-hover:text-zinc-900 dark:text-zinc-600 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <svg className="h-4 w-4 text-zinc-300 transition-all group-hover:translate-x-0.5 group-hover:text-[#0FA968] dark:text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
                   </svg>
                 </span>
