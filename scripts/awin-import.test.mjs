@@ -9,7 +9,7 @@ import { test } from 'node:test'
 import { gzipSync } from 'node:zlib'
 
 import {
-  FEED_COLUMNS, createCsvParser, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
+  FEED_COLUMNS, createCsvParser, feedDownloadUrl, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
 } from './awin-import.mjs'
 
 const csvLine = (cells) => cells.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',')
@@ -112,6 +112,21 @@ test('liste Awin : seuls les programmes acceptés, flux français préféré', (
   assert.deepEqual(result.map((a) => a.id), [300, 100])
   assert.deepEqual(result.find((a) => a.id === 100).feeds.map((f) => f.id), [12])
   assert.deepEqual(result.find((a) => a.id === 300).feeds.map((f) => f.id), [31])
+})
+
+test('liste Awin réelle : statut, format et adresse de téléchargement', () => {
+  const url = 'https://productdata.awin.com/datafeed/download/apikey/KEY/fid/115782/format/csv/language/fr/delimiter/%2C/compression/gzip/columns/'
+  const rows = [
+    { 'Advertiser ID': '126615', 'Advertiser Name': '1foDiscount', 'Membership Status': 'active', 'Datafeed Format': 'Awin', 'Feed ID': '115782', Language: 'French', 'No of products': '10271', URL: url },
+    { 'Advertiser ID': '5', 'Advertiser Name': 'Autre', 'Membership Status': 'Not Joined', 'Datafeed Format': 'Google', 'Feed ID': '9', Language: 'French', 'No of products': '3', URL: url },
+  ]
+  const [advertiser] = joinedAdvertisers(rows)
+  assert.equal(advertiser.name, '1foDiscount')
+  assert.equal(advertiser.feeds[0].format, 'Awin')
+  const download = feedDownloadUrl(advertiser.feeds[0])
+  assert.ok(download.startsWith(url + 'aw_deep_link,product_name,'))
+  assert.ok(download.endsWith(',in_stock/'))
+  assert.throws(() => feedDownloadUrl({ id: 1, url: 'https://exemple.fr/flux.csv' }), /inattendue/)
 })
 
 test('import complet contre un faux Supabase : marchand, offres, purge, rafraîchissement', async () => {

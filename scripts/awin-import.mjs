@@ -12,7 +12,7 @@
 // Aucune dépendance : Node 20+ (fetch, zlib, streams).
 //
 // Variables d'environnement :
-//   AWIN_FEED_KEY               clé « flux produits » Awin (secret)
+//   AWIN_FEED_LIST_URL          adresse « feedList » du compte éditeur Awin (secret)
 //   SUPABASE_URL                URL du projet Supabase
 //   SUPABASE_SERVICE_ROLE_KEY   clé service (secret)
 //   AWIN_MAX_PRODUCTS           plafond d'offres par marchand (défaut 1000)
@@ -26,8 +26,6 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGunzip } from 'node:zlib'
-
-const FEED_HOST = 'https://productdata.awin.com'
 
 // Colonnes demandées à Awin. L'ordre n'a pas d'importance : on lit l'en-tête.
 export const FEED_COLUMNS = [
@@ -222,7 +220,14 @@ export function joinedAdvertisers(listRows) {
     if (!Number.isInteger(id) || !Number.isInteger(feedId)) continue
     const language = String(row['Language'] ?? '').trim().toLowerCase()
     const entry = byAdvertiser.get(id) ?? { id, name: String(row['Advertiser Name'] ?? '').trim(), feeds: [] }
-    entry.feeds.push({ id: feedId, language, products: Number(row['No of products']) || 0 })
+    entry.feeds.push({
+      id: feedId,
+      language,
+      products: Number(row['No of products']) || 0,
+      // « Awin » (colonnes aw_*) ou « Google » (nouveau format des annonceurs).
+      format: String(row['Datafeed Format'] ?? 'Awin').trim(),
+      url: String(row['URL'] ?? '').trim(),
+    })
     byAdvertiser.set(id, entry)
   }
   for (const entry of byAdvertiser.values()) {
@@ -233,25 +238,39 @@ export function joinedAdvertisers(listRows) {
   return [...byAdvertiser.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
 
-function feedUrl(key, feedIds) {
-  return `${FEED_HOST}/datafeed/download/apikey/${key}/language/fr/fid/${feedIds.join(',')}` +
-    `/columns/${FEED_COLUMNS.join(',')}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`
+/**
+ * Adresse de téléchargement d'un flux. La liste Awin fournit une adresse qui se
+ * termine par « /columns/ » : on y ajoute les colonnes voulues.
+ */
+export function feedDownloadUrl(feed) {
+  if (!/^https:\/\/.+\/columns\/$/.test(feed.url)) {
+    throw new Error(`adresse de flux inattendue pour le flux ${feed.id}`)
+  }
+  return `${feed.url}${FEED_COLUMNS.join(',')}/`
 }
 
 async function openList(env) {
   if (env.AWIN_LIST_FILE) return Readable.from([await readFile(env.AWIN_LIST_FILE)])
-  const res = await fetch(`${FEED_HOST}/datafeed/list/apikey/${env.AWIN_FEED_KEY}`)
+  const res = await fetch(env.AWIN_FEED_LIST_URL)
   if (!res.ok) throw new Error(`Liste des flux Awin : HTTP ${res.status}`)
   return Readable.fromWeb(res.body)
 }
 
-async function openFeed(env, advertiser) {
+/** Lignes de tous les flux d'un annonceur, l'un après l'autre. */
+async function* readAdvertiserFeeds(env, advertiser) {
   if (env.AWIN_FEED_DIR) {
-    return createReadStream(path.join(env.AWIN_FEED_DIR, `${advertiser.id}.csv.gz`)).pipe(createGunzip())
+    yield* readCsv(createReadStream(path.join(env.AWIN_FEED_DIR, `${advertiser.id}.csv.gz`)).pipe(createGunzip()))
+    return
   }
-  const res = await fetch(feedUrl(env.AWIN_FEED_KEY, advertiser.feeds.map((f) => f.id)))
-  if (!res.ok) throw new Error(`Flux Awin : HTTP ${res.status}`)
-  return Readable.fromWeb(res.body).pipe(createGunzip())
+  const feeds = advertiser.feeds.filter((feed) => feed.format.toLowerCase() === 'awin')
+  if (feeds.length === 0) {
+    throw new Error('flux au format « Google » uniquement : ce format n’est pas encore pris en charge')
+  }
+  for (const feed of feeds) {
+    const res = await fetch(feedDownloadUrl(feed))
+    if (!res.ok) throw new Error(`Flux Awin ${feed.id} : HTTP ${res.status}`)
+    yield* readCsv(Readable.fromWeb(res.body).pipe(createGunzip()))
+  }
 }
 
 // --- Supabase ----------------------------------------------------------------
@@ -296,7 +315,7 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
   // Le marchand doit exister avant ses produits. Son domaine vient du flux :
   // on lit d'abord avec un identifiant provisoire, puis on le fixe.
   const selection = await selectProducts(
-    readCsv(await openFeed(env, advertiser)),
+    readAdvertiserFeeds(env, advertiser),
     { merchantId: 0, country, runId },
     max,
   )
@@ -345,7 +364,7 @@ export async function main(env = process.env) {
   const country = (env.AWIN_COUNTRY || 'FR').toUpperCase()
   const runId = new Date().toISOString()
 
-  if (!env.AWIN_FEED_KEY && !env.AWIN_LIST_FILE) throw new Error('AWIN_FEED_KEY manquant')
+  if (!env.AWIN_FEED_LIST_URL && !env.AWIN_LIST_FILE) throw new Error('AWIN_FEED_LIST_URL manquant')
   if (!dryRun && (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)) {
     throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants')
   }

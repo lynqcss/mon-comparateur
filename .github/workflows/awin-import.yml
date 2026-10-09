@@ -5,7 +5,7 @@
 # et GitHub envoie un e-mail.
 #
 # Secrets requis (Settings > Secrets and variables > Actions) :
-#   AWIN_FEED_KEY               clé « flux produits » du compte éditeur Awin
+#   AWIN_FEED_LIST_URL          adresse « feedList » du compte éditeur Awin
 #   SUPABASE_URL                URL du projet Supabase
 #   SUPABASE_SERVICE_ROLE_KEY   clé service Supabase
 name: Import Awin
@@ -46,7 +46,7 @@ jobs:
         run: node --test scripts/awin-import.test.mjs
       - name: Import des catalogues
         env:
-          AWIN_FEED_KEY: ${{ secrets.AWIN_FEED_KEY }}
+          AWIN_FEED_LIST_URL: ${{ secrets.AWIN_FEED_LIST_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AWIN_MAX_PRODUCTS: ${{ github.event.inputs.max_products || '1000' }}
