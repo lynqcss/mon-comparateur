@@ -99,7 +99,7 @@ export default function AuctionMechanism({ lang = 'fr' }: { lang?: string }) {
 
     const [budget, setBudget] = useState(200000)
     const [avgCpc, setAvgCpc] = useState(0.21)
-    const [mode, setMode] = useState<Mode>('budget')
+    const [mode, setMode] = useState<Mode>('perf')
 
     const euro = (n: number) =>
         new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.round(n))
@@ -193,7 +193,7 @@ export default function AuctionMechanism({ lang = 'fr' }: { lang?: string }) {
 
             {/* Choix du scénario */}
             <div className="mx-auto mt-6 flex w-fit rounded-full border border-zinc-200 bg-white p-1 text-sm font-semibold dark:border-zinc-800 dark:bg-zinc-900" role="group">
-                {(['budget', 'perf'] as const).map((value) => (
+                {(['perf', 'budget'] as const).map((value) => (
                     <button
                         key={value}
                         type="button"
