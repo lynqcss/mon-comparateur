@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import LynqLogo from '@/app/components/LynqLogo'
 
 /**
@@ -152,6 +152,8 @@ type Geo = {
   chrome: number
   // Chapitre 1
   m: {
+    /** Logo Google à gauche de la barre de recherche. */
+    logo: { x: number; y: number; h: number }
     search: Rect
     tabsY: number
     sponsoredY: number
@@ -159,6 +161,10 @@ type Geo = {
     /** Résultats naturels esquissés sous le carrousel (remplissage réaliste). */
     results: { y: number; count: number; w: number }
     compare: {
+      /** Position du logo Google pendant la comparaison. */
+      logo: { x: number; y: number; h: number }
+      /** Décalage vertical du panneau, pour laisser la place au logo. */
+      shiftY: number
       titleY: number
       colW: number
       leftX: number
@@ -188,12 +194,15 @@ const WIDE: Geo = {
   win: { x: 40, y: 28, w: 880, h: 544 },
   chrome: 44,
   m: {
-    search: { x: 28, y: 18, w: 600, h: 46 },
+    logo: { x: 28, y: 25, h: 32 },
+    search: { x: 148, y: 18, w: 600, h: 46 },
     tabsY: 80,
     sponsoredY: 122,
     carousel: { x: 28, y: 158, cardW: 154, cardH: 264, gap: 13, imageH: 124 },
     results: { y: 440, count: 1, w: 560 },
     compare: {
+      logo: { x: 28, y: 25, h: 32 },
+      shiftY: 0,
       titleY: 28,
       colW: 280,
       leftX: 150,
@@ -222,12 +231,15 @@ const NARROW: Geo = {
   win: { x: 10, y: 10, w: 400, h: 700 },
   chrome: 40,
   m: {
-    search: { x: 16, y: 14, w: 368, h: 44 },
+    logo: { x: 16, y: 25, h: 22 },
+    search: { x: 92, y: 14, w: 292, h: 44 },
     tabsY: 72,
     sponsoredY: 112,
     carousel: { x: 16, y: 148, cardW: 150, cardH: 264, gap: 12, imageH: 120 },
     results: { y: 432, count: 3, w: 368 },
     compare: {
+      logo: { x: 164, y: 12, h: 24 },
+      shiftY: 26,
       titleY: 24,
       colW: 178,
       leftX: 16,
@@ -521,8 +533,19 @@ function MerchantScene({ t, g, labels, fmt, uid }: SceneProps) {
 
   const focus = ADS[FOCUS_AD]
 
+  // Le logo reste affiché pendant tout le chapitre : à gauche de la barre de
+  // recherche, puis à sa place dans la comparaison.
+  const logoX = lerp(m.logo.x, c.logo.x, pageOut)
+  const logoY = lerp(m.logo.y, c.logo.y, pageOut)
+  const logoH = lerp(m.logo.h, c.logo.h, pageOut)
+
   return (
     <>
+      <GoogleLogo
+        className="absolute w-auto"
+        style={{ left: logoX, top: logoY, height: logoH, opacity: fadeIn * (1 - panelOut) }}
+      />
+
       {/* ---- Page de résultats ---- */}
       <div className="absolute inset-0" style={{ opacity: fadeIn * (1 - pageOut), transform: `scale(${lerp(1, 0.97, pageOut)})` }}>
         {/* Barre de recherche */}
@@ -642,7 +665,7 @@ function MerchantScene({ t, g, labels, fmt, uid }: SceneProps) {
 
       {/* ---- Même annonce, via Google ou via Lynq ---- */}
       {t >= 4.8 ? (
-        <div className="absolute inset-0" style={{ opacity: 1 - panelOut }}>
+        <div className="absolute inset-0" style={{ top: c.shiftY, opacity: 1 - panelOut }}>
           <p
             className={`absolute inset-x-0 text-center font-bold tracking-tight text-zinc-900 dark:text-white ${c.compact ? 'text-xl' : 'text-2xl'}`}
             style={{ top: c.titleY, opacity: titleP, transform: `translateY(${(1 - titleP) * 10}px)` }}
@@ -1074,6 +1097,20 @@ function ShopperScene({ t, g, labels, fmt, uid }: SceneProps) {
         </div>
       ) : null}
     </>
+  )
+}
+
+/** Logotype Google, pour situer la scène sur une page de résultats. */
+function GoogleLogo({ className, style }: { className?: string; style?: CSSProperties }) {
+  return (
+    <svg viewBox="0 0 272 92" className={className} style={style} role="img" aria-label="Google">
+      <path fill="#EA4335" d="M115.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18C71.25 34.32 81.24 25 93.5 25s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44S80.99 39.2 80.99 47.18c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+      <path fill="#FBBC05" d="M163.75 47.18c0 12.77-9.99 22.18-22.25 22.18s-22.25-9.41-22.25-22.18c0-12.85 9.99-22.18 22.25-22.18s22.25 9.32 22.25 22.18zm-9.74 0c0-7.98-5.79-13.44-12.51-13.44s-12.51 5.46-12.51 13.44c0 7.9 5.79 13.44 12.51 13.44s12.51-5.55 12.51-13.44z" />
+      <path fill="#4285F4" d="M209.75 26.34v39.82c0 16.38-9.66 23.07-21.08 23.07-10.75 0-17.22-7.19-19.66-13.07l8.48-3.53c1.51 3.61 5.21 7.87 11.17 7.87 7.31 0 11.84-4.51 11.84-13v-3.19h-.34c-2.18 2.69-6.38 5.04-11.68 5.04-11.09 0-21.25-9.66-21.25-22.09 0-12.52 10.16-22.26 21.25-22.26 5.29 0 9.49 2.35 11.68 4.96h.34v-3.61h9.25zm-8.56 20.92c0-7.81-5.21-13.52-11.84-13.52-6.72 0-12.35 5.71-12.35 13.52 0 7.73 5.63 13.36 12.35 13.36 6.63 0 11.84-5.63 11.84-13.36z" />
+      <path fill="#34A853" d="M225 3v65h-9.5V3h9.5z" />
+      <path fill="#EA4335" d="M262.02 54.48l7.56 5.04c-2.44 3.61-8.32 9.83-18.48 9.83-12.6 0-22.01-9.74-22.01-22.18 0-13.19 9.49-22.18 20.92-22.18 11.51 0 17.14 9.16 18.98 14.11l1.01 2.52-29.65 12.28c2.27 4.45 5.8 6.72 10.75 6.72 4.96 0 8.4-2.44 10.92-6.14zm-23.27-7.98l19.82-8.23c-1.09-2.77-4.37-4.7-8.23-4.7-4.95 0-11.84 4.37-11.59 12.93z" />
+      <path fill="#4285F4" d="M35.29 41.41V32H67c.31 1.64.47 3.58.47 5.68 0 7.06-1.93 15.79-8.15 22.01-6.05 6.3-13.78 9.66-24.02 9.66C16.32 69.35.36 53.89.36 34.91.36 15.93 16.32.47 35.3.47c10.5 0 17.98 4.12 23.6 9.49l-6.64 6.64c-4.03-3.78-9.49-6.72-16.97-6.72-13.86 0-24.7 11.17-24.7 25.03 0 13.86 10.84 25.03 24.7 25.03 8.99 0 14.11-3.61 17.39-6.89 2.66-2.66 4.41-6.46 5.1-11.65l-22.49.01z" />
+    </svg>
   )
 }
 
