@@ -1,3 +1,5 @@
+import AdminNav from './AdminNav'
+
 export default function AdminLayout({
     children,
 }: {
@@ -5,6 +7,7 @@ export default function AdminLayout({
 }) {
     return (
         <div className="min-h-screen">
+            <AdminNav />
             {children}
         </div>
     )
