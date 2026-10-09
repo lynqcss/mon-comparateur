@@ -16,6 +16,37 @@ type Merchant = {
   sync_paused: boolean
 }
 
+/**
+ * Rend lisible la cause d'un échec de synchronisation renvoyée par l'API,
+ * du type « Merchant API products.list 401: { "error": { "message": ... } } ».
+ */
+function describeSyncError(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw.trim() : ''
+  if (!text) return ''
+
+  const match = text.match(/^(.*?)\s(\d{3}):\s*(\{[\s\S]*)$/)
+  if (!match) return text.slice(0, 300)
+
+  const code = Number(match[2])
+  let googleMessage = ''
+  try {
+    googleMessage = JSON.parse(match[3])?.error?.message ?? ''
+  } catch {
+    googleMessage = match[3].slice(0, 200)
+  }
+
+  const hint =
+    code === 401 || code === 403
+      ? 'Google refuse l’accès : le compte de service Lynq n’est pas autorisé sur ce Merchant Center.'
+      : code === 404
+        ? 'Google ne trouve pas ce compte Merchant Center : vérifiez le GMC ID.'
+        : code === 429
+          ? 'Google limite le nombre de requêtes : réessayez dans quelques minutes.'
+          : ''
+
+  return [hint, `Réponse de Google (${code}) : ${googleMessage}`.trim()].filter(Boolean).join(' ')
+}
+
 export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<Merchant[]>([])
   const [loading, setLoading] = useState(false)
@@ -126,7 +157,7 @@ export default function MerchantsPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        setError(data.error || 'Erreur lors de la creation')
+        setError(data.error || 'Erreur lors de la création')
         return
       }
 
@@ -135,7 +166,7 @@ export default function MerchantsPage() {
       setForm({ gmc_id: '', name: '', website_url: '', default_category: '' })
     } catch (e) {
       console.error(e)
-      setError('Erreur reseau')
+      setError('Erreur réseau')
     } finally {
       setLoading(false)
     }
@@ -148,13 +179,17 @@ export default function MerchantsPage() {
       const res = await fetch('/api/gmc/sync?merchantId=' + merchantId)
       const data = await res.json()
       if (!res.ok || !data?.success) {
-        setError(data?.message || 'Erreur lors de la synchronisation')
+        const detail = describeSyncError(data?.error)
+        const base = data?.message || 'Erreur lors de la synchronisation'
+        setError(detail ? `${base}. ${detail}` : base)
+        // Le statut « erreur » vient d'être enregistré : on recharge la liste.
+        await fetchMerchants()
         return
       }
       await fetchMerchants()
     } catch (err) {
       console.error(err)
-      setError('Erreur reseau pendant la synchronisation')
+      setError('Erreur réseau pendant la synchronisation')
     } finally {
       setSyncingId(null)
     }
@@ -175,7 +210,7 @@ export default function MerchantsPage() {
       setMerchants((prev) => prev.filter((m) => m.id !== merchant.id))
     } catch (err) {
       console.error(err)
-      setError('Erreur reseau pendant la suppression')
+      setError('Erreur réseau pendant la suppression')
     } finally {
       setDeletingId(null)
     }
@@ -200,7 +235,7 @@ export default function MerchantsPage() {
       )
     } catch (err) {
       console.error(err)
-      setError('Erreur reseau')
+      setError('Erreur réseau')
     } finally {
       setTogglingId(null)
     }
@@ -211,14 +246,8 @@ export default function MerchantsPage() {
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white">Admin CSS</h1>
-          <p className="mt-2 text-zinc-500 dark:text-zinc-400">Gerez vos marchands partenaires et synchronisez leurs catalogues produits.</p>
+          <p className="mt-2 text-zinc-500 dark:text-zinc-400">Gérez vos marchands partenaires et synchronisez leurs catalogues produits.</p>
         </div>
-        <Link
-          href="/admin/onboarding"
-          className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:shadow-md"
-        >
-          📋 Demandes d&apos;onboarding
-        </Link>
       </div>
 
       {/* KPI Cards */}
@@ -228,7 +257,7 @@ export default function MerchantsPage() {
           <div className="mt-2 text-3xl font-black text-zinc-900 dark:text-white">{merchants.length}</div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-          <div className="text-xs font-bold uppercase tracking-widest text-zinc-400">Produits Synchronises</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-zinc-400">Produits synchronisés</div>
           <div className="mt-2 text-3xl font-black text-zinc-900 dark:text-white">
             {merchants.reduce((sum, m) => sum + (m.last_import_count || 0), 0).toLocaleString('fr-FR')}
           </div>
@@ -299,7 +328,7 @@ export default function MerchantsPage() {
               </div>
 
               <div className="text-xs text-zinc-400 italic pt-1">
-                Champs obligatoires pour la conformite Google CSS.
+                Champs obligatoires pour la conformité Google CSS.
               </div>
 
               <button
@@ -318,10 +347,10 @@ export default function MerchantsPage() {
           <div className="border-b border-zinc-100 bg-zinc-50/50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
-                Marchands Enregistres
+                Marchands enregistrés
                 <span className="ml-2 text-sm font-normal text-zinc-400">({filteredAndSortedMerchants.length})</span>
               </h2>
-              <button onClick={fetchMerchants} className="text-xs font-bold text-zinc-400 hover:text-zinc-900 transition-colors">Rafraichir</button>
+              <button onClick={fetchMerchants} className="text-xs font-bold text-zinc-400 hover:text-zinc-900 transition-colors">Rafraîchir</button>
             </div>
             <div className="mt-4 flex items-center gap-4">
               <div className="relative flex-1">
@@ -369,7 +398,7 @@ export default function MerchantsPage() {
               <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
                 {filteredAndSortedMerchants.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-3 py-12 text-center text-zinc-400">Aucun marchand trouve</td>
+                    <td colSpan={6} className="px-3 py-12 text-center text-zinc-400">Aucun marchand trouvé</td>
                   </tr>
                 ) : (
                   filteredAndSortedMerchants.map((m) => (
@@ -497,7 +526,7 @@ export default function MerchantsPage() {
               Supprimer {merchantToDelete.name} ?
             </h3>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-              Cette action supprimera definitivement le marchand ainsi que <strong>tous ses produits</strong> de la base de donnees. Cette action est irreversible.
+              Cette action supprimera définitivement le marchand ainsi que <strong>tous ses produits</strong> de la base de données. Cette action est irréversible.
             </p>
             <div className="mt-8 flex items-center justify-end gap-3">
               <button

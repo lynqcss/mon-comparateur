@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from '@/app/components/AppLink'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -79,12 +78,6 @@ export default function AdminOnboardingPage() {
                         Suivez les demandes de connexion CSS de vos clients.
                     </p>
                 </div>
-                <Link
-                    href="/admin/merchants"
-                    className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-bold text-zinc-700 transition-all hover:bg-zinc-50"
-                >
-                    ← Marchands
-                </Link>
             </div>
 
             {/* KPI Cards */}

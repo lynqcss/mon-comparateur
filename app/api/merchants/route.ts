@@ -27,11 +27,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Un même compte Merchant Center ne peut être rattaché qu'à un marchand.
+    const gmcId = String(gmc_id).trim()
+    const { data: existing, error: lookupError } = await supabase
+      .from('merchants')
+      .select('id, name')
+      .eq('gmc_id', gmcId)
+      .limit(1)
+
+    if (lookupError) {
+      console.error(lookupError)
+      return NextResponse.json({ error: 'Failed to create merchant' }, { status: 500 })
+    }
+    if (existing && existing.length > 0) {
+      return NextResponse.json(
+        { error: `Ce GMC ID est déjà utilisé par le marchand « ${existing[0].name} » (n° ${existing[0].id}).` },
+        { status: 409 }
+      )
+    }
+
     const { data, error } = await supabase
       .from('merchants')
       .insert([
         {
-          gmc_id,
+          gmc_id: gmcId,
           name,
           website_url,
           default_category: default_category || null,
@@ -91,7 +110,15 @@ export async function DELETE(req: NextRequest) {
     )
   }
 
-  return NextResponse.json({ success: true })
+  // Sans ce rafraîchissement, les fiches du marchand supprimé resteraient dans
+  // la comparaison jusqu'à la prochaine synchronisation. Au mieux : un échec
+  // ici n'annule pas la suppression, déjà faite.
+  const { error: refreshError } = await supabase.rpc('refresh_product_groups')
+  if (refreshError) {
+    console.error('refresh_product_groups:', refreshError.message)
+  }
+
+  return NextResponse.json({ success: true, refreshed: !refreshError })
 }
 
 export async function PATCH(req: NextRequest) {

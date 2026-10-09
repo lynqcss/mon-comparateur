@@ -39,7 +39,7 @@ export default async function ContactPage({ searchParams }: Props) {
                         : 'Une question sur une offre, un marchand ou notre service de comparaison ? Écrivez-nous, nous lisons chaque message.'}
                 </p>
 
-                <div className="mt-12">
+                <div className="mt-12 grid gap-4 sm:grid-cols-2">
                     <a
                         href={`mailto:${EMAIL}`}
                         className="group flex items-center gap-6 rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm transition-all hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
@@ -56,6 +56,27 @@ export default async function ContactPage({ searchParams }: Props) {
                             </p>
                         </div>
                     </a>
+
+                    <div className="flex items-center gap-6 rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-900 dark:bg-zinc-800 dark:text-white">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                {isEn ? 'Address' : 'Adresse'}
+                            </h2>
+                            <address className="mt-1 text-base font-bold not-italic leading-6 text-zinc-900 dark:text-white">
+                                Lynq CSS
+                                <br />
+                                9 cours du Médoc
+                                <br />
+                                33300 Bordeaux, France
+                            </address>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-zinc-100 bg-zinc-50/60 p-8 dark:border-zinc-800 dark:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between">

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from '@/app/components/AppLink'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import CountryLanguageSwitcher from './CountryLanguageSwitcher'
 import { getTranslation } from '@/lib/i18n'
@@ -9,6 +9,7 @@ import LynqLogo from '@/app/components/LynqLogo'
 
 export default function Header() {
     const searchParams = useSearchParams()
+    const pathname = usePathname()
     const lang = searchParams.get('lang') || 'fr'
     const t = getTranslation(lang)
 
@@ -25,29 +26,35 @@ export default function Header() {
         return qs ? `${path}?${qs}` : path
     }
 
+    const navClass = (href: string) =>
+        `rounded-full px-3.5 py-2 transition-colors ${
+            pathname.startsWith(href)
+                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white'
+                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white'
+        }`
+
     return (
         <header className="sticky top-0 z-50 border-b border-zinc-200/50 bg-white/80 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-950/80">
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-6">
                     <Link prefetch={false} href={buildUrl('/')} className="group flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                         <LynqLogo className="h-9 w-auto text-zinc-900 transition-transform group-hover:scale-105 dark:text-zinc-50" />
                     </Link>
 
-                    <nav className="hidden items-center gap-6 md:flex text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                        <Link prefetch={false} href={buildUrl('/products')} className="transition-colors hover:text-zinc-900 dark:hover:text-white">
+                    <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
+                        <Link prefetch={false} href={buildUrl('/products')} className={navClass('/products')}>
                             {t.nav.products}
                         </Link>
-                        <Link prefetch={false} href={buildUrl('/merchants')} className="transition-colors hover:text-zinc-900 dark:hover:text-white">
+                        <Link prefetch={false} href={buildUrl('/merchants')} className={navClass('/merchants')}>
                             {t.nav.merchants}
                         </Link>
                     </nav>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <div className="hidden sm:block">
                         <CountryLanguageSwitcher />
                     </div>
-                    <div className="hidden h-4 w-[1px] bg-zinc-200 dark:bg-zinc-800 sm:block" />
                     <Link prefetch={false} href={buildUrl('/join')} className="hidden sm:block rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-900">
                         {t.nav.diffuse}
                     </Link>
@@ -83,8 +90,8 @@ export default function Header() {
                         </Link>
                     </nav>
                     <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                        <div className="mb-4">
-                            <CountryLanguageSwitcher />
+                        <div className="mb-4 sm:hidden">
+                            <CountryLanguageSwitcher align="left" />
                         </div>
                         <Link prefetch={false} href={buildUrl('/join')} onClick={() => setIsMenuOpen(false)} className="flex w-full justify-center rounded-full bg-zinc-900 px-5 py-3 text-sm font-bold text-white shadow-md active:scale-95 dark:bg-white dark:text-zinc-900">
                             {t.nav.diffuse}
