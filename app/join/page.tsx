@@ -17,8 +17,8 @@ export default async function JoinPage({ searchParams }: Props) {
     return (
         <div className="flex flex-col bg-white dark:bg-zinc-950">
             {/* Hero Section */}
-            <section className="relative overflow-hidden pb-16 pt-16 sm:pb-20 sm:pt-20">
-                <div className="absolute inset-0 -z-10 bg-[radial-gradient(60rem_50rem_at_top,theme(colors.zinc.100),white)] opacity-30 dark:bg-[radial-gradient(60rem_50rem_at_top,theme(colors.zinc.900),theme(colors.zinc.950))]" />
+            <section className="relative pb-12 pt-16 sm:pt-20">
+                <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[34rem] bg-[radial-gradient(60rem_30rem_at_top,theme(colors.zinc.100),transparent)] opacity-60 dark:bg-[radial-gradient(60rem_30rem_at_top,theme(colors.zinc.900),transparent)]" />
 
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-3xl text-center">
@@ -51,7 +51,7 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* Benefits Section */}
-            <section id="benefits" className="scroll-mt-24 bg-zinc-50/60 py-20 dark:bg-zinc-900/20 sm:py-24">
+            <section id="benefits" className="scroll-mt-24 py-16 sm:py-20">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
                         {t.join.benefits_title}
@@ -79,14 +79,14 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* Auction Mechanism Section */}
-            <section className="py-24 sm:py-32">
+            <section className="py-16 sm:py-20">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <AuctionMechanism lang={selectedLang} />
                 </div>
             </section>
 
             {/* Steps Section */}
-            <section className="py-32 overflow-hidden">
+            <section className="py-16 sm:py-20">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
                         <div>
@@ -127,7 +127,7 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* FAQ Section */}
-            <section className="bg-zinc-50/60 py-20 dark:bg-zinc-900/10 sm:py-24">
+            <section className="py-16 sm:py-20">
                 <div className="mx-auto max-w-3xl px-6 lg:px-8">
                     <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">{t.join.faq_title}</h2>
                     <div className="mt-12">
@@ -150,7 +150,7 @@ export default async function JoinPage({ searchParams }: Props) {
             </section>
 
             {/* Final CTA */}
-            <section className="py-32">
+            <section className="py-16 sm:py-24">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="relative overflow-hidden rounded-[2.5rem] bg-zinc-900 px-8 py-24 text-center shadow-2xl dark:bg-white sm:px-16">
                         <h2 className="text-3xl font-black tracking-tight text-white dark:text-zinc-900 sm:text-5xl">
