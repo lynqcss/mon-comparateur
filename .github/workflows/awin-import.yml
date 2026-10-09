@@ -11,10 +11,9 @@
 name: Import Awin
 
 on:
-  # Planification quotidienne désactivée tant que le format réel des flux Awin
-  # n'est pas confirmé (cf. awin-inspect.yml). À réactiver ensuite :
-  # schedule:
-  #   - cron: "30 2 * * *"
+  # Chaque nuit à 2 h 30 UTC (4 h 30 à Paris en été, 3 h 30 en hiver).
+  schedule:
+    - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
