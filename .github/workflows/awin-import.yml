@@ -1,0 +1,53 @@
+# Import quotidien des catalogues Awin dans Lynq (scripts/awin-import.mjs).
+#
+# Tourne ici et non sur Vercel : les flux sont volumineux, et l'import ne doit
+# rien coûter aux quotas du site. En cas d'échec d'un marchand, le job échoue
+# et GitHub envoie un e-mail.
+#
+# Secrets requis (Settings > Secrets and variables > Actions) :
+#   AWIN_FEED_KEY               clé « flux produits » du compte éditeur Awin
+#   SUPABASE_URL                URL du projet Supabase
+#   SUPABASE_SERVICE_ROLE_KEY   clé service Supabase
+name: Import Awin
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Essai : lire et valider les flux sans rien écrire en base"
+        type: boolean
+        default: true
+      max_products:
+        description: "Plafond d'offres par marchand"
+        required: false
+        default: "1000"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: awin-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests de l'import
+        run: node --test scripts/awin-import.test.mjs
+      - name: Import des catalogues
+        env:
+          AWIN_FEED_KEY: ${{ secrets.AWIN_FEED_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AWIN_MAX_PRODUCTS: ${{ github.event.inputs.max_products || '1000' }}
+          # Une exécution programmée écrit toujours ; un lancement manuel est un essai par défaut.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && '1' || '0' }}
+        run: node scripts/awin-import.mjs
