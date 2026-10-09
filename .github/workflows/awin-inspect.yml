@@ -1,0 +1,26 @@
+# Inspection des flux Awin : affiche la structure de la liste des flux et d'un
+# premier catalogue, sans rien écrire. Lancement manuel uniquement.
+#
+# Secret requis (Settings > Secrets and variables > Actions) :
+#   AWIN_FEED_LIST_URL   l'adresse « feedList » complète copiée depuis Awin
+name: Awin — inspection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Structure des flux Awin
+        env:
+          AWIN_FEED_LIST_URL: ${{ secrets.AWIN_FEED_LIST_URL }}
+        run: node scripts/awin-inspect.mjs

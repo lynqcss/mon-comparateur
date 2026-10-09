@@ -11,8 +11,10 @@
 name: Import Awin
 
 on:
-  schedule:
-    - cron: "30 2 * * *"
+  # Planification quotidienne désactivée tant que le format réel des flux Awin
+  # n'est pas confirmé (cf. awin-inspect.yml). À réactiver ensuite :
+  # schedule:
+  #   - cron: "30 2 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
