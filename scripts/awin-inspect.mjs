@@ -85,7 +85,7 @@ const sample = joined[0] ?? rows[0]
 if (!sample) process.exit(0)
 
 console.log('\n== Exemple de ligne')
-for (const [key, value] of Object.entries(sample)) show(`  ${key} :`, String(value).slice(0, 160))
+for (const [key, value] of Object.entries(sample)) show(`  ${key} :`, String(value).slice(0, 700))
 
 // ---- 2. Un premier catalogue --------------------------------------------------
 const urlColumn = columns.find((c) => /^url$/i.test(c)) ?? columns.find((c) => /url|link|download/i.test(c))

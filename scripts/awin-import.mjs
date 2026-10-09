@@ -239,14 +239,15 @@ export function joinedAdvertisers(listRows) {
 }
 
 /**
- * Adresse de téléchargement d'un flux. La liste Awin fournit une adresse qui se
- * termine par « /columns/ » : on y ajoute les colonnes voulues.
+ * Adresse de téléchargement d'un flux. La liste Awin fournit une adresse qui
+ * contient déjà « /columns/<liste par défaut>/ » : on y substitue nos colonnes.
  */
 export function feedDownloadUrl(feed) {
-  if (!/^https:\/\/.+\/columns\/$/.test(feed.url)) {
+  const pattern = /\/columns\/[^/]*(\/|$)/
+  if (!/^https:\/\//.test(feed.url) || !pattern.test(feed.url)) {
     throw new Error(`adresse de flux inattendue pour le flux ${feed.id}`)
   }
-  return `${feed.url}${FEED_COLUMNS.join(',')}/`
+  return feed.url.replace(pattern, `/columns/${FEED_COLUMNS.join(',')}/`)
 }
 
 async function openList(env) {

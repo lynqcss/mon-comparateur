@@ -126,6 +126,10 @@ test('liste Awin réelle : statut, format et adresse de téléchargement', () =>
   const download = feedDownloadUrl(advertiser.feeds[0])
   assert.ok(download.startsWith(url + 'aw_deep_link,product_name,'))
   assert.ok(download.endsWith(',in_stock/'))
+  // L'adresse réelle contient déjà une liste de colonnes, parfois suivie d'autres réglages.
+  assert.equal(feedDownloadUrl({ id: 1, url: url + 'data_feed_id,merchant_id/' }), download)
+  assert.equal(feedDownloadUrl({ id: 1, url: url + 'data_feed_id,merchant_id' }), download)
+  assert.equal(feedDownloadUrl({ id: 1, url: url + 'a,b/adultcontent/1/' }), download + 'adultcontent/1/')
   assert.throws(() => feedDownloadUrl({ id: 1, url: 'https://exemple.fr/flux.csv' }), /inattendue/)
 })
 
