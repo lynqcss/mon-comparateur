@@ -3,6 +3,7 @@
 import Link from '@/app/components/AppLink'
 import { useSearchParams } from 'next/navigation'
 import { getTranslation } from '@/lib/i18n'
+import LynqLogo from '@/app/components/LynqLogo'
 
 export default function Footer() {
     const searchParams = useSearchParams()
@@ -29,10 +30,7 @@ export default function Footer() {
                 <div className="grid gap-8 md:grid-cols-4">
                     <div className="md:col-span-2">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 text-white dark:bg-white dark:text-zinc-900">
-                                <span className="text-sm font-bold italic">L</span>
-                            </div>
-                            <span className="text-lg font-bold tracking-tight">Lynq CSS</span>
+                            <LynqLogo className="h-8 w-auto text-zinc-900 dark:text-zinc-50" />
                         </div>
                         <p className="max-w-xs text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
                             {t.footer.description}

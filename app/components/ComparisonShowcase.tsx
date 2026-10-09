@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import LynqLogo from '@/app/components/LynqLogo'
 
 /**
  * Animation « motion design » de la landing page, en deux chapitres qui
@@ -271,9 +272,6 @@ const lerpRect = (a: Rect, b: Rect, p: number): Rect => ({
 
 // useLayoutEffect ne s'exécute pas côté serveur : on retombe sur useEffect.
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
-
-const LOGO_PATH =
-  'M 35,20 V 70 A 20,20 0 0,0 55,90 H 90 A 25,25 0 0,0 115,65 A 25,25 0 0,0 90,40 H 65 A 15,15 0 0,0 50,55 A 15,15 0 0,0 65,70 H 80'
 
 type Format = {
   money: (value: number, withCents: boolean) => string
@@ -876,8 +874,8 @@ function ShopperScene({ t, g, labels, fmt, uid }: SceneProps) {
 
   // Scène 7 — signature de marque
   const brandActive = t >= 12.6
-  const logoP = inOutCubic(prog(t, 12.8, 1.2))
-  const wordP = outCubic(prog(t, 13.6, 0.6))
+  const wordP = outCubic(prog(t, 12.8, 0.6))
+  const logoP = inOutCubic(prog(t, 13.2, 1.0))
   const tagP = outCubic(prog(t, 14.0, 0.6))
   const brandOpacity = 1 - outCubic(prog(t, 15.4, 0.5))
 
@@ -891,10 +889,7 @@ function ShopperScene({ t, g, labels, fmt, uid }: SceneProps) {
         className="absolute inset-x-0 flex items-center justify-center gap-2.5"
         style={{ top: g.introY, opacity: introOpacity, transform: `translateY(${-14 * upP}px)` }}
       >
-        <svg viewBox="0 0 140 120" className="h-8 w-auto text-[#2B3A4A] dark:text-zinc-100">
-          <path d={LOGO_PATH} fill="none" stroke="currentColor" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Lynq</span>
+        <LynqLogo className="h-11 w-auto text-zinc-900 dark:text-white" />
       </div>
 
       {/* Barre de recherche */}
@@ -1065,25 +1060,11 @@ function ShopperScene({ t, g, labels, fmt, uid }: SceneProps) {
       {/* Signature de marque */}
       {brandActive ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center" style={{ opacity: brandOpacity }}>
-          <svg viewBox="0 0 140 120" className="h-24 w-auto text-[#2B3A4A] dark:text-zinc-100" style={{ opacity: prog(t, 12.8, 0.1) }}>
-            <path
-              d={LOGO_PATH}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={16}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              pathLength={1}
-              strokeDasharray="1"
-              strokeDashoffset={1 - logoP}
-            />
-          </svg>
-          <p
-            className="mt-4 text-5xl font-bold tracking-tight text-zinc-900 dark:text-white"
+          <LynqLogo
+            className="h-28 w-auto text-zinc-900 dark:text-white"
+            spread={logoP}
             style={{ opacity: wordP, transform: `translateY(${(1 - wordP) * 12}px)` }}
-          >
-            Lynq
-          </p>
+          />
           <p
             className="mt-3 bg-gradient-to-br from-zinc-950 to-zinc-500 bg-clip-text text-xl font-semibold text-transparent dark:from-white dark:to-zinc-500"
             style={{ opacity: tagP, transform: `translateY(${(1 - tagP) * 10}px)` }}
