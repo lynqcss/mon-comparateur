@@ -30,7 +30,8 @@ export default function SortDropdown() {
             <select
                 onChange={handleSortChange}
                 value={currentSort}
-                className="appearance-none rounded-full border border-zinc-200 bg-white px-6 py-2 pr-10 text-xs font-bold uppercase tracking-widest text-zinc-900 outline-none transition-all hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white cursor-pointer"
+                aria-label={t.products.sort_by}
+                className="w-full cursor-pointer appearance-none rounded-full border border-zinc-200 bg-white py-2.5 pl-4 pr-10 text-sm font-medium text-zinc-900 outline-none transition-all hover:border-zinc-300 focus:border-[#0FA968] focus:ring-4 focus:ring-[#0FA968]/15 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white sm:w-auto"
             >
                 <option value="">{t.products.sort_by}</option>
                 <option value="price_asc">{t.products.sort_asc}</option>

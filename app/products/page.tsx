@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import SortDropdown from '@/app/components/SortDropdown'
+import ProductImage from '@/app/components/ProductImage'
 import { getTranslation } from '@/lib/i18n'
 import { formatPrice } from '@/lib/utils'
 import { getRootCategories, getCategoryIdsForFilter, getBrands } from '@/lib/facets'
@@ -21,7 +22,7 @@ const PAGE_SIZE = 36
 //   - valeur invalide ou hors bornes -> 404.
 const ALLOWED_PARAMS = new Set([
   'page', 'categoryId', 'rootCategory', 'categoryPath', 'q', 'brands',
-  'minPrice', 'maxPrice', 'country', 'lang', 'sort',
+  'minPrice', 'maxPrice', 'country', 'lang', 'sort', 'merchant',
 ])
 const MULTI_PARAMS = new Set(['brands'])
 const MAX_PAGE = 100
@@ -48,6 +49,9 @@ function isValidProductsQuery(raw: RawParams): boolean {
 
   const categoryId = one('categoryId')
   if (categoryId !== undefined && !isInt(categoryId)) return false
+
+  const merchant = one('merchant')
+  if (merchant !== undefined && !isInt(merchant)) return false
 
   const country = one('country')
   if (country !== undefined && !/^[A-Za-z]{2}$/.test(country)) return false
@@ -104,6 +108,7 @@ type ProductsPageProps = {
     country?: string
     lang?: string
     sort?: 'price_asc' | 'price_desc'
+    merchant?: string
   }>
 }
 
@@ -121,31 +126,63 @@ type GroupRow = {
   merchant_count: number | null
 }
 
-const ROOT_ICONS: Record<string, string> = {
-  'Adulte': '🔞',
-  'Alimentation, boissons et tabac': '🍎',
-  'Animaux et articles pour animaux de compagnie': '🐾',
-  'Appareils photo, caméras et instruments d\'optique': '📷',
-  'Appareils électroniques': '📱',
-  'Arts et loisirs': '🎨',
-  'Articles de sport': '⚽',
-  'Bagages et maroquinerie': '🧳',
-  'Bébés et tout-petits': '👶',
-  'Commerce et industrie': '🏭',
-  'Entreprise et industrie': '🏭',
-  'Équipements sportifs': '⚽',
-  'Fournitures de bureau': '📎',
-  'Jeux et jouets': '🎮',
-  'Logiciels': '💻',
-  'Maison et jardin': '🏠',
-  'Meubles': '🛋️',
-  'Médias': '🎬',
-  'Quincaillerie': '🔧',
-  'Santé et beauté': '✨',
-  'Véhicules et accessoires': '🚗',
-  'Vêtements et accessoires': '👕',
-  'Armes': '🔫',
-  'Autres': '❓'
+// Rayons : pictogramme au trait (viewBox 24) et libellé anglais.
+const GENERIC_ICON = 'M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z'
+const ROOTS: Record<string, { icon: string; en: string }> = {
+  'Adulte': { icon: GENERIC_ICON, en: 'Adult' },
+  'Alimentation, boissons et tabac': { icon: 'M6 8h10v5a5 5 0 01-10 0zm10 1h2a2 2 0 010 4h-2M5 20h12', en: 'Food, beverages & tobacco' },
+  'Animaux et articles pour animaux de compagnie': { icon: GENERIC_ICON, en: 'Animals & pet supplies' },
+  "Appareils photo, caméras et instruments d'optique": { icon: 'M4 8h3l1.5-2h7L17 8h3v11H4zm8 2.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7z', en: 'Cameras & optics' },
+  'Appareils électroniques': { icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M3 9h2m-2 6h2m14-6h2m-2 6h2M7 5h10a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2zm3 5h4v4h-4z', en: 'Electronics' },
+  'Arts et loisirs': { icon: 'M4 20c0-2 1-3 2.5-3S9 18 9 19.5 7.5 21 4 20zM9 16l9.5-9.5a1.8 1.8 0 012.5 2.5L11.5 18.5', en: 'Arts & entertainment' },
+  'Bagages et maroquinerie': { icon: 'M4 8h16v11H4zm5 0V6a2 2 0 012-2h2a2 2 0 012 2v2M4 13h16', en: 'Luggage & bags' },
+  'Bébés et tout-petits': { icon: GENERIC_ICON, en: 'Baby & toddler' },
+  'Entreprise et industrie': { icon: GENERIC_ICON, en: 'Business & industrial' },
+  'Fournitures de bureau': { icon: 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3', en: 'Office supplies' },
+  'Jeux et jouets': { icon: 'M7 8h10a4 4 0 014 4v2a3 3 0 01-5.2 2L14.5 15h-5l-1.3 1A3 3 0 013 14v-2a4 4 0 014-4zm1 3v3m-1.5-1.5h3', en: 'Toys & games' },
+  'Logiciels': { icon: 'M8 8l-4 4 4 4m8-8l4 4-4 4M13.5 6l-3 12', en: 'Software' },
+  'Maison et jardin': { icon: 'M3 11.5L12 4l9 7.5M5.5 10v9.5h13V10M10 19.5v-5h4v5', en: 'Home & garden' },
+  'Meubles': { icon: 'M5 11V8a2 2 0 012-2h10a2 2 0 012 2v3M3 13a2 2 0 014 0v2h10v-2a2 2 0 014 0v4H3zm3 4v2m12-2v2', en: 'Furniture' },
+  'Médias': { icon: 'M5 4.5h10a3 3 0 013 3V20H8a3 3 0 01-3-3zm0 12.5a3 3 0 013-3h10', en: 'Media' },
+  'Offices religieux et cérémonies': { icon: GENERIC_ICON, en: 'Religious & ceremonial' },
+  'Quincaillerie': { icon: 'M15 5a4 4 0 00-5.3 5.3L4 16l4 4 5.7-5.7A4 4 0 0019 9l-2.5 2.5-2-2L17 7a4 4 0 00-2-2z', en: 'Hardware' },
+  'Santé et beauté': { icon: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z', en: 'Health & beauty' },
+  'Véhicules et accessoires': { icon: 'M5 12l1.5-4.5A2 2 0 018.4 6h7.2a2 2 0 011.9 1.5L19 12m-14 0h14a1 1 0 011 1v4H4v-4a1 1 0 011-1zm1 5v1.5M18 17v1.5', en: 'Vehicles & parts' },
+  'Vêtements et accessoires': { icon: 'M8 4l-5 3 2 4 2-1v10h10V10l2 1 2-4-5-3a3 3 0 01-6 0z', en: 'Apparel & accessories' },
+  'Équipements sportifs': { icon: 'M6.5 6.5v11M3.5 9v6m14-8.5v11m3-8.5v6M6.5 12h11', en: 'Sporting goods' },
+}
+
+const COPY = {
+  fr: {
+    eyebrow: 'Catalogue', filters: 'Filtres', clearAll: 'Tout effacer', apply: 'Appliquer', price: 'Prix',
+    search: 'Recherche', previous: 'Page précédente', next: 'Page suivante', page: 'Page',
+    min: 'Min', max: 'Max', remove: 'Retirer le filtre', product: 'produit trouvé', products: 'produits trouvés',
+  },
+  en: {
+    eyebrow: 'Catalogue', filters: 'Filters', clearAll: 'Clear all', apply: 'Apply', price: 'Price',
+    search: 'Search', previous: 'Previous page', next: 'Next page', page: 'Page',
+    min: 'Min', max: 'Max', remove: 'Remove filter', product: 'product found', products: 'products found',
+  },
+}
+
+function Icon({ path, className }: { path: string; className?: string }) {
+  return (
+    <svg className={className ?? 'h-[18px] w-[18px]'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d={path} />
+    </svg>
+  )
+}
+
+/** Numéros de page à afficher : première, dernière et voisines de la page courante. */
+function pageWindow(current: number, total: number): (number | 'gap')[] {
+  const wanted = new Set([1, total, current - 1, current, current + 1])
+  const pages = Array.from(wanted).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b)
+  const out: (number | 'gap')[] = []
+  pages.forEach((p, i) => {
+    if (i > 0 && p - pages[i - 1] > 1) out.push('gap')
+    out.push(p)
+  })
+  return out
 }
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
@@ -157,6 +194,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const categoryPath = params.categoryPath ? decodeURIComponent(params.categoryPath) : null
   const rootCategory = params.rootCategory || (categoryPath ? categoryPath.split(' > ')[0] : null)
   const q = params.q?.trim() || ''
+  const merchantId = params.merchant ? Number(params.merchant) : null
 
   // Multi-select handling
   const getArray = (val: string | string[] | undefined) => {
@@ -172,8 +210,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   // pays (et un pays de test isolé) sans casser FR/PL.
   const selectedCountry = (params.country || 'FR').toUpperCase()
   const selectedLang = params.lang || (selectedCountry === 'FR' ? 'fr' : 'en')
+  const isFr = selectedLang !== 'en'
   const sort = params.sort || null
   const t = getTranslation(selectedLang)
+  const c = COPY[isFr ? 'fr' : 'en']
+  const locale = isFr ? 'fr-FR' : 'en-IE'
+  const rootLabel = (root: string) => (isFr ? root : ROOTS[root]?.en ?? root)
 
   // Facettes mises en cache (cf. lib/facets.ts) : elles ne dépendent que du
   // catalogue synchronisé (1x/jour), jamais du visiteur. Les recalculer à
@@ -181,46 +223,101 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   // du dépassement des quotas.
   const rootCategories = await getRootCategories(selectedCountry)
   const categoryIds = await getCategoryIdsForFilter(categoryId, categoryPath, rootCategory)
+  // Marques disponibles pour les filtres actifs (facette cachée, cf. lib/facets.ts)
+  const allBrands = await getBrands(selectedCountry, categoryIds, q)
+
+  // Une marque cochée couvre toutes ses écritures (« Nike » et « NIKE »).
+  const brandValues = selectedBrands.flatMap((name) => {
+    const facet = allBrands.find((b) => b.name === name || b.variants.includes(name))
+    return facet ? facet.variants : [name]
+  })
 
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  let query = supabase
-    .from('product_groups')
-    .select('group_key, route_key, gtin, title, image_link, brand, price_currency, google_product_category_id, min_price, merchant_count', { count: 'exact' })
-    .eq('country_code', selectedCountry)
+  let groupList: GroupRow[] = []
+  let total = 0
+  let merchantName: string | null = null
 
-  if (categoryIds !== null) {
-    query = categoryIds.length > 0
-      ? query.in('google_product_category_id', categoryIds)
-      : query.eq('google_product_category_id', -1) // force no match
+  if (merchantId) {
+    // Offres d'UN marchand : la vue groupée ne sait pas à quel marchand
+    // appartient un groupe, on lit donc directement ses offres.
+    const { data: merchant } = await supabase.from('merchants').select('name').eq('id', merchantId).maybeSingle()
+    if (!merchant) notFound()
+    merchantName = merchant.name
+
+    let offers = supabase
+      .from('products')
+      .select('id, gtin, title, image_link, brand, price_currency, google_product_category_id, price_value, shipping_price', { count: 'exact' })
+      .eq('merchant_id', merchantId)
+      .eq('country_code', selectedCountry)
+
+    if (categoryIds !== null) {
+      offers = categoryIds.length > 0
+        ? offers.in('google_product_category_id', categoryIds)
+        : offers.eq('google_product_category_id', -1) // force no match
+    }
+    if (q) offers = offers.ilike('title', `%${q}%`)
+    if (brandValues.length > 0) offers = offers.in('brand', brandValues)
+    if (minPrice != null && !Number.isNaN(minPrice)) offers = offers.gte('price_value', minPrice)
+    if (maxPrice != null && !Number.isNaN(maxPrice)) offers = offers.lte('price_value', maxPrice)
+
+    const { data, count } = await (sort === 'price_asc'
+      ? offers.order('price_value', { ascending: true })
+      : sort === 'price_desc'
+        ? offers.order('price_value', { ascending: false })
+        : offers.order('id', { ascending: false })
+    ).range(from, to)
+
+    groupList = (data || []).map((offer) => ({
+      group_key: `offer:${offer.id}`,
+      route_key: offer.gtin ? offer.gtin : `id-${offer.id}`,
+      gtin: offer.gtin,
+      title: offer.title,
+      image_link: offer.image_link,
+      brand: offer.brand,
+      price_currency: offer.price_currency,
+      google_product_category_id: offer.google_product_category_id,
+      min_price: offer.price_value == null ? null : Number(offer.price_value) + Number(offer.shipping_price ?? 0),
+      merchant_count: 1,
+    }))
+    total = count ?? 0
+  } else {
+    let query = supabase
+      .from('product_groups')
+      .select('group_key, route_key, gtin, title, image_link, brand, price_currency, google_product_category_id, min_price, merchant_count', { count: 'exact' })
+      .eq('country_code', selectedCountry)
+
+    if (categoryIds !== null) {
+      query = categoryIds.length > 0
+        ? query.in('google_product_category_id', categoryIds)
+        : query.eq('google_product_category_id', -1) // force no match
+    }
+
+    if (q) query = query.ilike('title', `%${q}%`)
+    if (brandValues.length > 0) query = query.in('brand', brandValues)
+    if (minPrice != null && !Number.isNaN(minPrice)) query = query.gte('min_price', minPrice)
+    if (maxPrice != null && !Number.isNaN(maxPrice)) query = query.lte('min_price', maxPrice)
+
+    const { data: groups, count } = await (sort === 'price_asc'
+      ? query.order('min_price', { ascending: true })
+      : sort === 'price_desc'
+        ? query.order('min_price', { ascending: false })
+        : // Ordre par défaut : les produits proposés par le plus de marchands.
+          // À égalité, ceux dont le catalogue vient d'être synchronisé passent
+          // devant : provisoire, pour faire descendre les fiches de démonstration
+          // (images souvent mortes) tant qu'elles existent.
+          query
+            .order('merchant_count', { ascending: false })
+            .order('is_fresh', { ascending: false })
+            .order('group_key', { ascending: false })
+    ).range(from, to)
+
+    groupList = (groups as GroupRow[]) || []
+    total = count ?? 0
   }
 
-  if (q) query = query.ilike('title', `%${q}%`)
-  if (selectedBrands.length > 0) query = query.in('brand', selectedBrands)
-  if (minPrice != null && !Number.isNaN(minPrice)) query = query.gte('min_price', minPrice)
-  if (maxPrice != null && !Number.isNaN(maxPrice)) query = query.lte('min_price', maxPrice)
-
-  const { data: groups, count } = await (sort === 'price_asc'
-    ? query.order('min_price', { ascending: true })
-    : sort === 'price_desc'
-      ? query.order('min_price', { ascending: false })
-      : // Ordre par défaut : les produits proposés par le plus de marchands.
-        // À égalité, ceux dont le catalogue vient d'être synchronisé passent
-        // devant : provisoire, pour faire descendre les fiches de démonstration
-        // (images souvent mortes) tant qu'elles existent.
-        query
-          .order('merchant_count', { ascending: false })
-          .order('is_fresh', { ascending: false })
-          .order('group_key', { ascending: false })
-  ).range(from, to)
-
-  const groupList = (groups as GroupRow[]) || []
-  const total = count ?? 0
   const totalPages = Math.max(Math.ceil(total / PAGE_SIZE), 1)
-
-  // Marques disponibles pour les filtres actifs (facette cachée, cf. lib/facets.ts)
-  const allBrands = await getBrands(selectedCountry, categoryIds, q)
 
   const buildUrl = (extra: Record<string, string | number | null | string[]>) => {
     const sp = new URLSearchParams()
@@ -233,6 +330,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     if (minPrice) sp.set('minPrice', String(minPrice))
     if (maxPrice) sp.set('maxPrice', String(maxPrice))
     if (sort) sp.set('sort', sort)
+    if (merchantId) sp.set('merchant', String(merchantId))
     selectedBrands.forEach(b => sp.append('brands', b))
 
     Object.entries(extra).forEach(([k, v]) => {
@@ -243,244 +341,321 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     return `/products?${sp.toString()}`
   }
 
+  const resetUrl = buildUrl({ q: null, categoryId: null, rootCategory: null, categoryPath: null, brands: null, minPrice: null, maxPrice: null, sort: null, merchant: null, page: null })
+  const money = (value: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value)
+
+  // Filtres actifs, affichés en pastilles que l'on retire d'un clic.
+  const chips: { label: string; href: string }[] = []
+  if (merchantName) chips.push({ label: merchantName, href: buildUrl({ merchant: null, page: null }) })
+  if (q) chips.push({ label: `${c.search} : ${q}`, href: buildUrl({ q: null, page: null }) })
+  if (rootCategory) chips.push({ label: rootLabel(rootCategory), href: buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, page: null }) })
+  for (const brand of selectedBrands) chips.push({ label: brand, href: buildUrl({ brands: selectedBrands.filter((b) => b !== brand), page: null }) })
+  if (minPrice || maxPrice) {
+    const range = minPrice && maxPrice ? `${money(minPrice)} – ${money(maxPrice)}` : minPrice ? `≥ ${money(minPrice)}` : `≤ ${money(maxPrice as number)}`
+    chips.push({ label: `${c.price} : ${range}`, href: buildUrl({ minPrice: null, maxPrice: null, page: null }) })
+  }
+
+  const title = merchantName ?? (categoryPath ? categoryPath.split(' > ').pop() : rootCategory ? rootLabel(rootCategory) : q || t.products.title_all)
+  const sectionTitle = 'text-xs font-bold uppercase tracking-[0.16em] text-zinc-400'
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Page Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            {categoryPath ? categoryPath.split(' > ').pop() : ((t.categories as any)[rootCategory || ''] || rootCategory || q || t.products.title_all)}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500" suppressHydrationWarning>
-            {total.toLocaleString('fr-FR')} {t.products.found}
-          </p>
-        </div>
+    <div className="bg-white dark:bg-zinc-950">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 lg:px-8">
+        {/* En-tête */}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+              <span className="h-2 w-2 rounded-full bg-[#0FA968]" />
+              {c.eyebrow}
+            </p>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">{title}</h1>
+            <p className="mt-2 text-sm text-zinc-500" suppressHydrationWarning>
+              {total.toLocaleString(locale)} {total > 1 ? c.products : c.product}
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link
-            href="/products"
-            className="flex items-center justify-center rounded-full bg-zinc-900 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-900"
-          >
-            Réinitialiser les filtres
-          </Link>
-          {/* Sort Dropdown (Client Component) */}
-          <SortDropdown />
-
-          {/* Quick Search */}
-          <form className="relative flex-1 sm:max-w-sm" action="/products" method="GET">
-            {sort && <input type="hidden" name="sort" value={sort} />}
-            {params.country && <input type="hidden" name="country" value={params.country} />}
-            <input
-              type="text"
-              name="q"
-              defaultValue={q}
-              placeholder={t.products.search_placeholder}
-              className="w-full rounded-full border border-zinc-200 bg-white px-4 py-2 pl-10 text-sm outline-none transition-all focus:ring-2 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-white"
-            />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <form className="relative sm:w-72" action="/products" method="GET">
+              <input type="hidden" name="country" value={selectedCountry} />
+              <input type="hidden" name="lang" value={selectedLang} />
+              {rootCategory && <input type="hidden" name="rootCategory" value={rootCategory} />}
+              {merchantId && <input type="hidden" name="merchant" value={merchantId} />}
+              {sort && <input type="hidden" name="sort" value={sort} />}
+              <svg className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
               </svg>
-            </div>
-          </form>
+              <input
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder={t.products.search_placeholder}
+                aria-label={t.products.search_placeholder}
+                className="w-full rounded-full border border-zinc-200 bg-white py-2.5 pl-11 pr-4 text-sm outline-none transition-all placeholder:text-zinc-400 focus:border-[#0FA968] focus:ring-4 focus:ring-[#0FA968]/15 dark:border-zinc-800 dark:bg-zinc-900"
+              />
+            </form>
+            <SortDropdown />
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-8 md:grid-cols-[240px_1fr]">
-        {/* Sidebar Filters */}
-        {/* Mobile Filter Toggle */}
-        <input type="checkbox" id="mobile-filter-toggle" className="peer hidden" />
-        <label
-          htmlFor="mobile-filter-toggle"
-          className="md:hidden flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 bg-white p-4 font-bold text-zinc-900 shadow-sm transition-all dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-white"
-        >
-          <div className="flex items-center gap-2">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-            </svg>
-            <span>{t.products.filter_button || 'Filtres'}</span>
-          </div>
-          <svg className="h-5 w-5 transition-transform peer-checked:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </label>
-
-        <aside className="hidden peer-checked:block md:block space-y-8 mt-4 md:mt-0">
-          <div>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.categories}</h3>
-            <div className="space-y-1">
+        {/* Filtres actifs */}
+        {chips.length > 0 ? (
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            {chips.map((chip) => (
               <Link
-                rel="nofollow" href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, brands: null, minPrice: null, maxPrice: null, q: null })}
-                className={`block rounded-lg px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
+                key={chip.label}
+                rel="nofollow"
+                href={chip.href}
+                aria-label={`${c.remove} : ${chip.label}`}
+                className="group inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white py-1.5 pl-3.5 pr-2.5 text-sm font-medium text-zinc-800 transition-colors hover:border-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-white"
               >
-                {t.products.all_offers}
+                {chip.label}
+                <svg className="h-3.5 w-3.5 text-zinc-400 transition-colors group-hover:text-zinc-900 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4} aria-hidden="true">
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </Link>
-              {rootCategories.map(root => (
-                <Link
-                  key={root}
-                  rel="nofollow" href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null })}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${rootCategory === root ? 'bg-zinc-900 text-white font-medium dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
-                >
-                  <span>{ROOT_ICONS[root] || '📂'}</span>
-                  <span>{(t.categories as any)[root] || root}</span>
-                </Link>
-              ))}
-            </div>
+            ))}
+            <Link rel="nofollow" href={resetUrl} className="ml-1 text-sm font-semibold text-zinc-500 underline-offset-4 hover:text-zinc-900 hover:underline dark:hover:text-white">
+              {c.clearAll}
+            </Link>
           </div>
+        ) : null}
 
-          <div className="h-[1px] bg-zinc-100 dark:bg-zinc-800" />
-
-          {/* Pricing */}
-          <form action="/products" method="GET">
-            {q && <input type="hidden" name="q" value={q} />}
-            {rootCategory && <input type="hidden" name="rootCategory" value={rootCategory} />}
-            {sort && <input type="hidden" name="sort" value={sort} />}
-            {selectedBrands.map(b => <input type="hidden" key={b} name="brands" value={b} />)}
-
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.budget}</h3>
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  name="minPrice"
-                  defaultValue={minPrice || ''}
-                  placeholder="Min"
-                  className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs outline-none dark:border-zinc-800 dark:bg-zinc-900"
-                />
-                <input
-                  type="number"
-                  name="maxPrice"
-                  defaultValue={maxPrice || ''}
-                  placeholder="Max"
-                  className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs outline-none dark:border-zinc-800 dark:bg-zinc-900"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-zinc-100 py-2 text-xs font-bold text-zinc-900 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
-              >
-                {t.products.filter_button}
-              </button>
-            </div>
-          </form>
-
-          {/* Brands */}
+        <div className="mt-10 grid gap-10 lg:grid-cols-[250px_1fr]">
+          {/* Filtres : repliés sur mobile (case à cocher + peer), toujours visibles sur ordinateur */}
           <div>
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-900 dark:text-white">{t.products.brands}</h3>
-            <div className="max-h-48 space-y-2 overflow-y-auto pr-2 scrollbar-thin">
-              {allBrands.map(b => (
-                <Link
-                  key={b}
-                  rel="nofollow" href={buildUrl({ brands: selectedBrands.includes(b) ? selectedBrands.filter(x => x !== b) : [...selectedBrands, b] })}
-                  className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
-                >
-                  <div className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${selectedBrands.includes(b) ? 'bg-zinc-900 border-zinc-900 dark:bg-white dark:border-white' : 'border-zinc-300 dark:border-zinc-700'}`}>
-                    {selectedBrands.includes(b) && <svg className="h-3 w-3 text-white dark:text-zinc-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                  </div>
-                  <span>{b}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </aside>
+            <input type="checkbox" id="filters-toggle" className="peer hidden" />
+            <label
+              htmlFor="filters-toggle"
+              className="flex cursor-pointer items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-3.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white lg:hidden"
+            >
+              <span className="flex items-center gap-2.5">
+                <Icon path="M4 6h16M7 12h10M10 18h4" />
+                {c.filters}
+              </span>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </label>
 
-        {/* Product Grid */}
-        <div className="flex-1">
-          {groupList.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {groupList.map((g) => {
-                const href = `/product/${encodeURIComponent(g.route_key)}?country=${selectedCountry}&lang=${selectedLang}`
-                const multi = (g.merchant_count ?? 0) >= 2
-                return (
-                  <article key={g.group_key} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white transition-all hover:shadow-2xl hover:-translate-y-1 dark:border-zinc-800 dark:bg-zinc-900/50">
-                    {multi && (
-                      <span className="absolute top-3 left-3 z-10 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow">
-                        {g.merchant_count} {t.products.merchants_label}
-                      </span>
-                    )}
-                    <Link prefetch={false} href={href} className="block overflow-hidden bg-zinc-50 dark:bg-zinc-800">
-                      <div className="aspect-square p-4 transition-transform duration-500 group-hover:scale-110">
-                        {g.image_link ? (
-                          <img src={g.image_link} alt={g.title || ''} className="h-full w-full object-contain" loading="lazy" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">{t.product.no_image}</div>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="flex flex-1 flex-col p-4">
-                      <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                        <span>{g.brand || t.product.brand_unknown}</span>
-                        {multi && (
-                          <span className="text-emerald-600">
-                            {t.products.compare_label}
-                          </span>
-                        )}
-                      </div>
-                      <Link prefetch={false} href={href} className="mb-4 line-clamp-2 text-sm font-semibold leading-relaxed text-zinc-900 transition-colors hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300">
-                        {g.title}
+            <aside className="mt-6 hidden space-y-10 peer-checked:block lg:mt-0 lg:block">
+              {/* Rayons */}
+              <div>
+                <h2 className={sectionTitle}>{t.products.categories}</h2>
+                <div className="mt-4 space-y-0.5">
+                  <Link
+                    rel="nofollow"
+                    href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, page: null })}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
+                  >
+                    <Icon path={GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${!rootCategory ? 'text-[#0FA968]' : ''}`} />
+                    {t.products.all_offers}
+                  </Link>
+                  {rootCategories.map((root) => {
+                    const active = rootCategory === root
+                    return (
+                      <Link
+                        key={root}
+                        rel="nofollow"
+                        href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null, page: null })}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
+                      >
+                        <Icon path={ROOTS[root]?.icon ?? GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-[#0FA968]' : ''}`} />
+                        <span className="leading-snug">{rootLabel(root)}</span>
                       </Link>
-                      <div className="mt-auto flex items-center justify-between">
-                        <div className="flex flex-col">
-                          {multi && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                              {t.products.from_label}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-zinc-900 dark:text-white" suppressHydrationWarning>{formatPrice(g.min_price, g.price_currency)}</span>
-                        </div>
-                        <Link prefetch={false} href={href} className="rounded-full bg-zinc-900 p-2 text-white transition-all hover:scale-110 active:scale-95 dark:bg-white dark:text-zinc-900">
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          ) : (
-            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
-              <div className="mb-4 text-4xl">🔎</div>
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">{t.products.no_results}</h3>
-              <p className="mt-2 text-sm text-zinc-500">{t.products.no_results_p}</p>
-              <Link prefetch={false} rel="nofollow" href={buildUrl({ q: null, categoryId: null, rootCategory: null, brands: null, minPrice: null, maxPrice: null })} className="mt-6 rounded-full bg-zinc-900 px-6 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">
-                {t.products.reset}
-              </Link>
-            </div>
-          )}
+                    )
+                  })}
+                </div>
+              </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <nav className="mt-16 flex items-center justify-center gap-2">
-              <Link
-                rel="nofollow" href={buildUrl({ page: Math.max(page - 1, 1) })}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 transition-all ${page === 1 ? 'pointer-events-none opacity-20' : 'hover:bg-zinc-900 hover:text-white dark:border-zinc-800'}`}
-              >
-                ←
-              </Link>
-              <div className="flex gap-1">
-                {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-                  const pNum = i + 1;
+              {/* Budget */}
+              <form action="/products" method="GET">
+                <input type="hidden" name="country" value={selectedCountry} />
+                <input type="hidden" name="lang" value={selectedLang} />
+                {q && <input type="hidden" name="q" value={q} />}
+                {rootCategory && <input type="hidden" name="rootCategory" value={rootCategory} />}
+                {categoryId && <input type="hidden" name="categoryId" value={categoryId} />}
+                {merchantId && <input type="hidden" name="merchant" value={merchantId} />}
+                {sort && <input type="hidden" name="sort" value={sort} />}
+                {selectedBrands.map(b => <input type="hidden" key={b} name="brands" value={b} />)}
+
+                <h2 className={sectionTitle}>{t.products.budget}</h2>
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    name="minPrice"
+                    defaultValue={minPrice || ''}
+                    placeholder={c.min}
+                    aria-label={`${t.products.budget} ${c.min}`}
+                    className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-[#0FA968] focus:ring-4 focus:ring-[#0FA968]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                  />
+                  <span className="text-zinc-300">–</span>
+                  <input
+                    type="number"
+                    min={0}
+                    name="maxPrice"
+                    defaultValue={maxPrice || ''}
+                    placeholder={c.max}
+                    aria-label={`${t.products.budget} ${c.max}`}
+                    className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-[#0FA968] focus:ring-4 focus:ring-[#0FA968]/15 dark:border-zinc-800 dark:bg-zinc-900"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="mt-3 w-full rounded-full border border-zinc-200 py-2 text-sm font-semibold text-zinc-900 transition-colors hover:border-zinc-900 dark:border-zinc-800 dark:text-white dark:hover:border-white"
+                >
+                  {c.apply}
+                </button>
+              </form>
+
+              {/* Marques */}
+              {allBrands.length > 0 && !merchantId ? (
+                <div>
+                  <h2 className={sectionTitle}>{t.products.brands}</h2>
+                  <div className="mt-4 max-h-72 space-y-0.5 overflow-y-auto pr-1">
+                    {allBrands.map((brand) => {
+                      const checked = selectedBrands.some((name) => name === brand.name || brand.variants.includes(name))
+                      const next = checked
+                        ? selectedBrands.filter((name) => name !== brand.name && !brand.variants.includes(name))
+                        : [...selectedBrands, brand.name]
+                      return (
+                        <Link
+                          key={brand.name}
+                          rel="nofollow"
+                          href={buildUrl({ brands: next, page: null })}
+                          role="checkbox"
+                          aria-checked={checked}
+                          className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white"
+                        >
+                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors ${checked ? 'border-[#0FA968] bg-[#0FA968]' : 'border-zinc-300 dark:border-zinc-700'}`}>
+                            {checked ? (
+                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5} aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : null}
+                          </span>
+                          <span className={`min-w-0 flex-1 truncate ${checked ? 'font-semibold text-zinc-900 dark:text-white' : ''}`}>{brand.name}</span>
+                          <span className="text-xs tabular-nums text-zinc-400">{brand.count}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </aside>
+          </div>
+
+          {/* Produits */}
+          <div className="min-w-0">
+            {groupList.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+                {groupList.map((g) => {
+                  const href = `/product/${encodeURIComponent(g.route_key)}?country=${selectedCountry}&lang=${selectedLang}`
+                  const multi = (g.merchant_count ?? 0) >= 2
                   return (
-                    <Link
-                      key={pNum}
-                      rel="nofollow" href={buildUrl({ page: pNum })}
-                      className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all ${page === pNum ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                    >
-                      {pNum}
-                    </Link>
+                    <article key={g.group_key} className="group relative flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all hover:-translate-y-1 hover:border-[#0FA968] hover:shadow-[0_24px_50px_-28px_rgba(24,24,27,0.3)] dark:border-zinc-800 dark:bg-zinc-900">
+                      {multi ? (
+                        <span className="absolute left-3 top-3 z-10 rounded-full bg-[#0FA968] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                          {g.merchant_count} {t.products.merchants_label}
+                        </span>
+                      ) : null}
+                      <Link prefetch={false} href={href} className="block bg-zinc-50 dark:bg-zinc-800/60" tabIndex={-1} aria-hidden="true">
+                        <div className="aspect-square p-5">
+                          <ProductImage
+                            src={g.image_link}
+                            alt={g.title || ''}
+                            className="h-full w-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105 dark:mix-blend-normal"
+                          />
+                        </div>
+                      </Link>
+                      <div className="flex flex-1 flex-col p-4">
+                        <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
+                          {g.brand || t.product.brand_unknown}
+                        </p>
+                        <Link prefetch={false} href={href} className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 after:absolute after:inset-0 dark:text-white">
+                          {g.title}
+                        </Link>
+                        <div className="mt-auto flex items-end justify-between gap-2 pt-4">
+                          <div>
+                            {multi ? (
+                              <span className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400">{t.products.from_label}</span>
+                            ) : null}
+                            <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white" suppressHydrationWarning>
+                              {formatPrice(g.min_price, g.price_currency)}
+                            </span>
+                          </div>
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-900 transition-colors group-hover:bg-[#0FA968] group-hover:text-white dark:bg-zinc-800 dark:text-white">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-6-6l6 6-6 6" />
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    </article>
                   )
                 })}
               </div>
-              <Link
-                rel="nofollow" href={buildUrl({ page: Math.min(page + 1, totalPages) })}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 transition-all ${page === totalPages ? 'pointer-events-none opacity-20' : 'hover:bg-zinc-900 hover:text-white dark:border-zinc-800'}`}
-              >
-                →
-              </Link>
-            </nav>
-          )}
+            ) : (
+              <div className="flex min-h-[380px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 p-12 text-center dark:border-zinc-800">
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-500 dark:bg-zinc-800">
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" />
+                    <path strokeLinecap="round" d="M20 20l-3.5-3.5" />
+                  </svg>
+                </span>
+                <h2 className="mt-5 text-lg font-bold text-zinc-900 dark:text-white">{t.products.no_results}</h2>
+                <p className="mt-2 max-w-sm text-sm text-zinc-500">{t.products.no_results_p}</p>
+                <Link prefetch={false} rel="nofollow" href={resetUrl} className="mt-6 rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900">
+                  {t.products.reset}
+                </Link>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 ? (
+              <nav className="mt-14 flex items-center justify-center gap-1.5" aria-label="Pagination">
+                <Link
+                  rel="nofollow"
+                  href={buildUrl({ page: Math.max(page - 1, 1) })}
+                  aria-label={c.previous}
+                  aria-disabled={page === 1}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors dark:border-zinc-800 dark:text-zinc-300 ${page === 1 ? 'pointer-events-none opacity-30' : 'hover:border-zinc-900 dark:hover:border-white'}`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 6l-6 6 6 6" />
+                  </svg>
+                </Link>
+                {pageWindow(page, totalPages).map((item, index) =>
+                  item === 'gap' ? (
+                    <span key={`gap-${index}`} className="px-1 text-zinc-400">…</span>
+                  ) : (
+                    <Link
+                      key={item}
+                      rel="nofollow"
+                      href={buildUrl({ page: item })}
+                      aria-label={`${c.page} ${item}`}
+                      aria-current={page === item ? 'page' : undefined}
+                      className={`flex h-10 min-w-10 items-center justify-center rounded-full px-3 text-sm font-semibold tabular-nums transition-colors ${page === item ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'}`}
+                    >
+                      {item}
+                    </Link>
+                  )
+                )}
+                <Link
+                  rel="nofollow"
+                  href={buildUrl({ page: Math.min(page + 1, totalPages) })}
+                  aria-label={c.next}
+                  aria-disabled={page === totalPages}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-700 transition-colors dark:border-zinc-800 dark:text-zinc-300 ${page === totalPages ? 'pointer-events-none opacity-30' : 'hover:border-zinc-900 dark:hover:border-white'}`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" />
+                  </svg>
+                </Link>
+              </nav>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

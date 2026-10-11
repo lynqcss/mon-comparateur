@@ -123,13 +123,28 @@ export const getCategoryIdsForFilter = unstable_cache(
   { revalidate: REVALIDATE_SECONDS, tags: ['catalog'] }
 )
 
-/** Marques disponibles, triées par popularité puis alphabétiquement. */
+export type BrandFacet = {
+  /** Libellé affiché : l'écriture la plus fréquente de la marque. */
+  name: string
+  /** Nombre de produits. */
+  count: number
+  /** Toutes les écritures rencontrées (« Nike », « NIKE »), pour filtrer. */
+  variants: string[]
+}
+
+// Valeurs qui ne sont pas des marques.
+const NOT_A_BRAND = new Set(['generique', 'générique', 'sans marque', 'no brand', 'n/a', 'na', '-', 'aucune', 'unknown'])
+
+/**
+ * Marques disponibles, par ordre alphabétique. Les écritures qui ne diffèrent
+ * que par la casse sont réunies en une seule entrée.
+ */
 export const getBrands = unstable_cache(
   async (
     country: string,
     categoryIds: number[] | null,
     q: string
-  ): Promise<string[]> => {
+  ): Promise<BrandFacet[]> => {
     const data = await fetchAllRows<{ brand: string | null }>((from, to) => {
       let query = supabase
         .from('product_groups')
@@ -145,17 +160,31 @@ export const getBrands = unstable_cache(
       return query.order('group_key').range(from, to)
     })
 
-    const counts: Record<string, number> = {}
+    const byKey = new Map<string, Map<string, number>>()
     for (const r of data) {
-      if (r.brand) counts[r.brand] = (counts[r.brand] || 0) + 1
+      const brand = r.brand?.trim()
+      if (!brand) continue
+      const key = brand.toLowerCase()
+      if (NOT_A_BRAND.has(key)) continue
+      const variants = byKey.get(key) ?? new Map<string, number>()
+      variants.set(r.brand as string, (variants.get(r.brand as string) ?? 0) + 1)
+      byKey.set(key, variants)
     }
 
-    let sorted = Object.keys(counts).sort((a, b) => counts[b] - counts[a])
+    let facets: BrandFacet[] = Array.from(byKey.values()).map((variants) => {
+      const sorted = Array.from(variants.entries()).sort((a, b) => b[1] - a[1])
+      return {
+        name: sorted[0][0].trim(),
+        count: sorted.reduce((sum, [, n]) => sum + n, 0),
+        variants: sorted.map(([variant]) => variant),
+      }
+    })
+
     // Sur la page "tous les produits" (aucun filtre catégorie), on borne la
     // sidebar aux 100 marques les plus fréquentes — comportement d'origine.
-    if (!categoryIds) sorted = sorted.slice(0, 100)
-    return sorted.sort()
+    if (!categoryIds) facets = facets.sort((a, b) => b.count - a.count).slice(0, 100)
+    return facets.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
   },
-  ['facet-brands'],
+  ['facet-brands-v2'],
   { revalidate: REVALIDATE_SECONDS, tags: ['catalog'] }
 )
