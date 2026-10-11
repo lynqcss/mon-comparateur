@@ -31,7 +31,7 @@ const SECTIONS: Record<'fr' | 'en', Section[]> = {
         {
             title: 'Comment les offres sont classées',
             body: [
-                'Dans les listes de produits, les produits dont les offres ont été mises à jour récemment apparaissent en premier, puis ceux proposés par le plus grand nombre de marchands. Vous pouvez à tout moment trier par prix croissant ou décroissant, et filtrer par catégorie, par marque ou par prix.',
+                'Dans les listes de produits, les produits proposés par le plus grand nombre de marchands apparaissent en premier. Vous pouvez à tout moment trier par prix croissant ou décroissant, et filtrer par catégorie, par marque ou par prix.',
                 'Sur une fiche produit, les offres sont classées par prix total croissant, c’est-à-dire le prix du produit augmenté des frais de livraison lorsqu’ils sont communiqués. Une seule offre est affichée par marchand : la moins chère.',
             ],
         },
@@ -68,7 +68,7 @@ const SECTIONS: Record<'fr' | 'en', Section[]> = {
         {
             title: 'How offers are ranked',
             body: [
-                'In product lists, products whose offers were updated recently appear first, followed by those offered by the largest number of merchants. You can sort by ascending or descending price at any time, and filter by category, brand or price.',
+                'In product lists, products offered by the largest number of merchants appear first. You can sort by ascending or descending price at any time, and filter by category, brand or price.',
                 'On a product page, offers are ranked by ascending total price, meaning the product price plus delivery costs when they are provided. Only one offer is shown per merchant: the cheapest.',
             ],
         },

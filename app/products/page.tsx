@@ -205,12 +205,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     ? query.order('min_price', { ascending: true })
     : sort === 'price_desc'
       ? query.order('min_price', { ascending: false })
-      : // Ordre par défaut : d'abord les produits dont une offre a été vue
-        // récemment dans le catalogue d'un marchand (prix et stock à jour),
-        // puis ceux proposés par le plus de marchands.
+      : // Ordre par défaut : les produits proposés par le plus de marchands.
+        // À égalité, ceux dont le catalogue vient d'être synchronisé passent
+        // devant : provisoire, pour faire descendre les fiches de démonstration
+        // (images souvent mortes) tant qu'elles existent.
         query
-          .order('is_fresh', { ascending: false })
           .order('merchant_count', { ascending: false })
+          .order('is_fresh', { ascending: false })
           .order('group_key', { ascending: false })
   ).range(from, to)
 
