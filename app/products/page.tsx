@@ -205,7 +205,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     ? query.order('min_price', { ascending: true })
     : sort === 'price_desc'
       ? query.order('min_price', { ascending: false })
-      : query.order('merchant_count', { ascending: false }).order('group_key', { ascending: false })
+      : // Ordre par défaut : d'abord les produits dont une offre a été vue
+        // récemment dans le catalogue d'un marchand (prix et stock à jour),
+        // puis ceux proposés par le plus de marchands.
+        query
+          .order('is_fresh', { ascending: false })
+          .order('merchant_count', { ascending: false })
+          .order('group_key', { ascending: false })
   ).range(from, to)
 
   const groupList = (groups as GroupRow[]) || []
