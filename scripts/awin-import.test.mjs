@@ -8,6 +8,7 @@ import { Readable } from 'node:stream'
 import { test } from 'node:test'
 import { gzipSync } from 'node:zlib'
 
+import { CATEGORY_RULES, mapCategory } from './awin-categories.mjs'
 import {
   FEED_COLUMNS, createCsvParser, feedDownloadUrl, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
 } from './awin-import.mjs'
@@ -199,4 +200,27 @@ test('mode essai : rien n\'est écrit', async () => {
   const result = await main({ AWIN_LIST_FILE: path.join(dir, 'list.csv'), AWIN_FEED_DIR: dir, DRY_RUN: '1' })
   assert.equal(result.imported, 1)
   assert.equal(result.total, 1)
+})
+
+test('rayons : libellés français, espagnols et anglais, le marchand avant Awin', () => {
+  const root = (label) => mapCategory(label)?.path.split(' > ')[0] ?? null
+  assert.equal(mapCategory('Baskets').id, 187)
+  assert.equal(mapCategory('Zapatillas').id, 187)
+  assert.equal(mapCategory('Entretien des chaussures').id, 1933)
+  assert.equal(mapCategory('Clothing Accessories | Pantalons').id, 204)
+  assert.equal(root('Fans | Watercooling'), 'Appareils électroniques')
+  assert.equal(root('Books | Librairie'), 'Médias')
+  assert.equal(root('Accessoires de Jeu de Plateaux'), 'Jeux et jouets')
+  assert.equal(root('Accessoires Ordinateurs Portables'), 'Appareils électroniques')
+  assert.equal(root('Accessoires'), 'Vêtements et accessoires')
+  assert.equal(mapCategory('Boîtier Externe').id, 2414)
+  assert.equal(mapCategory('Boîtier PC').id, 293)
+  assert.equal(mapCategory('Libellé inconnu'), null)
+  assert.equal(mapCategory(''), null)
+  const ctx = { merchantId: 1, country: 'FR', runId: 'r' }
+  const product = mapProduct(offer({ category_name: 'Headsets', merchant_category: 'Casque' }), ctx)
+  assert.equal(product.google_product_category_id, 505771)
+  assert.ok(product.google_product_category_path.endsWith('Casques Audio & Écouteurs'))
+  assert.equal(mapProduct(offer(), ctx).google_product_category_id, null)
+  assert.equal(new Set(CATEGORY_RULES.map((rule) => rule[0].source)).size, CATEGORY_RULES.length, 'règle en double')
 })

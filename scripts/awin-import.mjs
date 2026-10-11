@@ -27,6 +27,8 @@ import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { createGunzip } from 'node:zlib'
 
+import { mapCategory } from './awin-categories.mjs'
+
 // Colonnes demandées à Awin. L'ordre n'a pas d'importance : on lit l'en-tête.
 export const FEED_COLUMNS = [
   'aw_deep_link', 'product_name', 'aw_product_id', 'merchant_product_id',
@@ -170,6 +172,8 @@ export function mapProduct(record, { merchantId, country, runId }) {
   if (String(record.in_stock ?? '').trim() === '0') return null
 
   const description = String(record.description ?? '').trim()
+  const category = sourceCategory(record)
+  const rayon = mapCategory(category)
   return {
     merchant_id: merchantId,
     offer_id: offerId,
@@ -183,7 +187,9 @@ export function mapProduct(record, { merchantId, country, runId }) {
     brand: String(record.brand_name ?? '').trim() || null,
     gtin: normalizeGtin(record.ean) ?? normalizeGtin(record.product_GTIN),
     mpn: String(record.mpn ?? '').trim() || null,
-    source_category: sourceCategory(record),
+    source_category: category,
+    google_product_category_id: rayon?.id ?? null,
+    google_product_category_path: rayon?.path ?? null,
     shipping_price: parsePrice(record.delivery_cost),
     country_code: country,
     last_seen_at: runId,
@@ -204,6 +210,7 @@ export async function selectProducts(records, options, max) {
   let websiteUrl = null
   const awinCategories = new Map()
   const merchantCategories = new Map()
+  const unmapped = new Map()
   const tally = (map, value) => {
     const key = String(value ?? '').trim() || '(vide)'
     map.set(key, (map.get(key) ?? 0) + 1)
@@ -213,6 +220,7 @@ export async function selectProducts(records, options, max) {
     read++
     tally(awinCategories, record.category_name)
     tally(merchantCategories, record.merchant_category)
+    if (!mapCategory(sourceCategory(record))) tally(unmapped, sourceCategory(record))
     if (!websiteUrl) {
       const direct = httpsUrl(record.merchant_deep_link)
       if (direct) {
@@ -227,7 +235,8 @@ export async function selectProducts(records, options, max) {
   }
 
   const products = withGtin.concat(withoutGtin).slice(0, max)
-  return { products, read, rejected, withGtin: products.filter((p) => p.gtin).length, websiteUrl, awinCategories, merchantCategories }
+  return { products, read, rejected, withGtin: products.filter((p) => p.gtin).length, websiteUrl, awinCategories, merchantCategories, unmapped,
+    categorized: products.filter((p) => p.google_product_category_id).length }
 }
 
 // --- Awin --------------------------------------------------------------------
@@ -349,8 +358,11 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
     for (const [name, count] of top(selection.awinCategories, 60)) console.log(`    ${count}\t${name}`)
     console.log(`  Catégories du marchand (${selection.merchantCategories.size}) :`)
     for (const [name, count] of top(selection.merchantCategories, 40)) console.log(`    ${count}\t${name}`)
+    const missing = [...selection.unmapped.values()].reduce((a, b) => a + b, 0)
+    console.log(`  Libellés sans rayon : ${missing} offre(s) sur ${read}, ${selection.unmapped.size} libellé(s) :`)
+    for (const [name, count] of top(selection.unmapped, 60)) console.log(`    ${count}\t${name}`)
   }
-  const summary = `${products.length} offres retenues sur ${read} lues (${withGtin} avec code-barres, ${rejected} écartées)`
+  const summary = `${products.length} offres retenues sur ${read} lues (${withGtin} avec code-barres, ${selection.categorized} rangées dans un rayon, ${rejected} écartées)`
 
   if (!websiteUrl) throw new Error(`domaine du marchand introuvable dans le flux (${summary})`)
   if (products.length === 0) throw new Error(`aucune offre valide (${summary})`)
