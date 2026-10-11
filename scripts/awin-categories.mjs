@@ -104,7 +104,7 @@ export const CATEGORY_RULES = [
   [/outillage/, 632, 'Quincaillerie'],
   [/déguisements?/, 184, `${V} > Déguisements et accessoires`],
   [/gilets?/, 1831, `${V} > Vêtements > Vêtements de plein air > Gilets et vestes sans manches`],
-  [/\bgants?\b/, 170, `${V} > Accessoires d'habillement > Gants et moufles`],
+  [/(?<![a-zà-ÿ])gants?(?![a-zà-ÿ])/, 170, `${V} > Accessoires d'habillement > Gants et moufles`],
 
   // --- Libellés génériques, en dernier ---------------------------------------------
   [/^accessoires$|^accesorios$| \| accessoires$| \| accesorios$/, 167, `${V} > Accessoires d'habillement`],
