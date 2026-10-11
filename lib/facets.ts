@@ -22,20 +22,44 @@ import { supabase } from '@/lib/supabaseClient'
  */
 const REVALIDATE_SECONDS = 3600 // 1 h ; le catalogue ne change qu'une fois par jour
 const MAX_FACET_ROWS = 10_000
+// Supabase ne renvoie jamais plus de 1 000 lignes par requête, quelle que soit
+// la limite demandée : il faut donc lire page par page.
+const PAGE_ROWS = 1000
+
+type Page<T> = PromiseLike<{ data: T[] | null }>
+
+/**
+ * Lit toutes les lignes d'une requête, par pages de 1 000, jusqu'à
+ * MAX_FACET_ROWS. `page(from, to)` doit renvoyer la requête bornée par
+ * `.range(from, to)`, avec un tri stable.
+ */
+async function fetchAllRows<T>(page: (from: number, to: number) => Page<T>): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; from < MAX_FACET_ROWS; from += PAGE_ROWS) {
+    const { data } = await page(from, from + PAGE_ROWS - 1)
+    if (!data || data.length === 0) break
+    rows.push(...data)
+    if (data.length < PAGE_ROWS) break
+  }
+  return rows
+}
 
 /** Catégories racines (niveau 1) ayant des produits dans ce pays. */
 export const getRootCategories = unstable_cache(
   async (country: string): Promise<string[]> => {
-    const { data } = await supabase
-      .from('product_groups')
-      .select('google_product_category_id')
-      .eq('country_code', country)
-      .not('google_product_category_id', 'is', null)
-      .limit(MAX_FACET_ROWS)
+    const data = await fetchAllRows<{ google_product_category_id: number | null }>((from, to) =>
+      supabase
+        .from('product_groups')
+        .select('google_product_category_id')
+        .eq('country_code', country)
+        .not('google_product_category_id', 'is', null)
+        .order('group_key')
+        .range(from, to)
+    )
 
     const ids = Array.from(
       new Set(
-        (data || [])
+        data
           .map((r) => r.google_product_category_id)
           .filter((id): id is number => id !== null)
       )
@@ -69,19 +93,28 @@ export const getCategoryIdsForFilter = unstable_cache(
     if (categoryId) return [categoryId]
 
     if (categoryPath) {
-      const { data } = await supabase
-        .from('google_categories')
-        .select('id')
-        .ilike('full_path', `${categoryPath}%`)
-      return (data || []).map((c) => c.id)
+      const data = await fetchAllRows<{ id: number }>((from, to) =>
+        supabase
+          .from('google_categories')
+          .select('id')
+          .ilike('full_path', `${categoryPath}%`)
+          .order('id')
+          .range(from, to)
+      )
+      return data.map((c) => c.id)
     }
 
     if (rootCategory) {
-      const { data } = await supabase
-        .from('google_categories')
-        .select('id')
-        .eq('level1', rootCategory)
-      return (data || []).map((c) => c.id)
+      // Certains rayons comptent plus de 1 000 sous-catégories (Maison et jardin).
+      const data = await fetchAllRows<{ id: number }>((from, to) =>
+        supabase
+          .from('google_categories')
+          .select('id')
+          .eq('level1', rootCategory)
+          .order('id')
+          .range(from, to)
+      )
+      return data.map((c) => c.id)
     }
 
     return null
@@ -97,22 +130,23 @@ export const getBrands = unstable_cache(
     categoryIds: number[] | null,
     q: string
   ): Promise<string[]> => {
-    let query = supabase
-      .from('product_groups')
-      .select('brand')
-      .eq('country_code', country)
-      .not('brand', 'is', null)
-      .limit(MAX_FACET_ROWS)
+    const data = await fetchAllRows<{ brand: string | null }>((from, to) => {
+      let query = supabase
+        .from('product_groups')
+        .select('brand')
+        .eq('country_code', country)
+        .not('brand', 'is', null)
 
-    if (categoryIds && categoryIds.length > 0) {
-      query = query.in('google_product_category_id', categoryIds)
-    }
-    if (q) query = query.ilike('title', `%${q}%`)
+      if (categoryIds && categoryIds.length > 0) {
+        query = query.in('google_product_category_id', categoryIds)
+      }
+      if (q) query = query.ilike('title', `%${q}%`)
 
-    const { data } = await query
+      return query.order('group_key').range(from, to)
+    })
 
     const counts: Record<string, number> = {}
-    for (const r of data || []) {
+    for (const r of data) {
       if (r.brand) counts[r.brand] = (counts[r.brand] || 0) + 1
     }
 
