@@ -156,12 +156,12 @@ const COPY = {
   fr: {
     eyebrow: 'Catalogue', filters: 'Filtres', clearAll: 'Tout effacer', apply: 'Appliquer', price: 'Prix',
     search: 'Recherche', previous: 'Page précédente', next: 'Page suivante', page: 'Page',
-    min: 'Min', max: 'Max', remove: 'Retirer le filtre', product: 'produit trouvé', products: 'produits trouvés',
+    min: 'Min', max: 'Max', remove: 'Retirer le filtre',
   },
   en: {
     eyebrow: 'Catalogue', filters: 'Filters', clearAll: 'Clear all', apply: 'Apply', price: 'Price',
     search: 'Search', previous: 'Previous page', next: 'Next page', page: 'Page',
-    min: 'Min', max: 'Max', remove: 'Remove filter', product: 'product found', products: 'products found',
+    min: 'Min', max: 'Max', remove: 'Remove filter',
   },
 }
 
@@ -369,9 +369,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {c.eyebrow}
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">{title}</h1>
-            <p className="mt-2 text-sm text-zinc-500" suppressHydrationWarning>
-              {total.toLocaleString(locale)} {total > 1 ? c.products : c.product}
-            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

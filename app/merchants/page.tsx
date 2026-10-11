@@ -25,7 +25,10 @@ export const metadata = {
 const PAGE_ROWS = 1000
 const MAX_ROWS = 50_000
 
-/** Nombre d'offres par marchand dans un pays. */
+/**
+ * Marchands ayant au moins une offre dans un pays, avec leur nombre d'offres.
+ * Le nombre sert seulement à savoir qui lister : il n'est pas affiché.
+ */
 async function countOffersByMerchant(country: string): Promise<Map<number, number>> {
     const counts = new Map<number, number>()
     for (let from = 0; from < MAX_ROWS; from += PAGE_ROWS) {
@@ -59,7 +62,6 @@ export default async function MerchantsPage({ searchParams }: MerchantsPageProps
     const selectedLang = params.lang || (selectedCountry === 'FR' ? 'fr' : 'en')
     const isFr = selectedLang !== 'en'
     const t = getTranslation(selectedLang)
-    const locale = isFr ? 'fr-FR' : 'en-IE'
 
     const offerCounts = await countOffersByMerchant(selectedCountry)
     const uniqueIds = Array.from(offerCounts.keys())
@@ -88,7 +90,7 @@ export default async function MerchantsPage({ searchParams }: MerchantsPageProps
                 <div className="mx-auto max-w-3xl text-center">
                     <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                         <span className="h-2 w-2 rounded-full bg-[#0FA968]" />
-                        {merchantList.length} {isFr ? (merchantList.length > 1 ? 'marchands' : 'marchand') : merchantList.length > 1 ? 'merchants' : 'merchant'}
+                        {isFr ? 'Annuaire' : 'Directory'}
                     </p>
                     <h1 className="mt-4 text-4xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-5xl">
                         {t.merchants.title} <span className="text-gradient">{t.merchants.title_gradient}</span>
@@ -121,7 +123,6 @@ export default async function MerchantsPage({ searchParams }: MerchantsPageProps
                         {merchantList.map((m) => {
                             const initial = m.name?.trim().charAt(0).toUpperCase() || 'M'
                             const domain = getSafeDomain(m.website_url)
-                            const offers = offerCounts.get(m.id) ?? 0
 
                             return (
                                 <div key={m.id} className="group flex flex-col rounded-3xl border border-zinc-200/70 bg-white p-6 transition-all hover:-translate-y-1 hover:border-[#0FA968] hover:shadow-[0_24px_50px_-28px_rgba(24,24,27,0.3)] dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -134,11 +135,6 @@ export default async function MerchantsPage({ searchParams }: MerchantsPageProps
                                             <p className="truncate text-sm text-zinc-500">{domain}</p>
                                         </div>
                                     </div>
-
-                                    <p className="mt-5 text-sm text-zinc-600 dark:text-zinc-400">
-                                        <span className="font-semibold tabular-nums text-zinc-900 dark:text-white">{offers.toLocaleString(locale)}</span>{' '}
-                                        {isFr ? (offers > 1 ? 'offres' : 'offre') : offers > 1 ? 'offers' : 'offer'}
-                                    </p>
 
                                     <div className="mt-5 flex flex-col gap-2">
                                         <Link
