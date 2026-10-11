@@ -24,6 +24,10 @@ on:
         description: "Plafond d'offres par marchand"
         required: false
         default: "1000"
+      show_categories:
+        description: "Afficher les catégories présentes dans chaque catalogue"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,6 +53,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AWIN_MAX_PRODUCTS: ${{ github.event.inputs.max_products || '1000' }}
+          AWIN_SHOW_CATEGORIES: ${{ github.event.inputs.show_categories == 'true' && '1' || '0' }}
           # Une exécution programmée écrit toujours ; un lancement manuel est un essai par défaut.
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && '1' || '0' }}
         run: node scripts/awin-import.mjs

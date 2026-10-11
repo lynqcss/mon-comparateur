@@ -33,6 +33,7 @@ export const FEED_COLUMNS = [
   'merchant_image_url', 'aw_image_url', 'description', 'search_price',
   'currency', 'delivery_cost', 'merchant_name', 'merchant_id',
   'merchant_deep_link', 'brand_name', 'ean', 'product_GTIN', 'mpn', 'in_stock',
+  'category_name', 'merchant_category',
 ]
 
 const DESCRIPTION_MAX = 1000
@@ -139,6 +140,16 @@ function httpsUrl(raw) {
 }
 
 /**
+ * Catégorie telle que le catalogue la fournit : celle d'Awin, puis celle du
+ * marchand, séparées par « | ». Sert à ranger le produit dans les rayons du site.
+ */
+export function sourceCategory(record) {
+  const awin = String(record.category_name ?? '').trim()
+  const merchant = String(record.merchant_category ?? '').trim()
+  return [awin, merchant].filter(Boolean).join(' | ').slice(0, 300) || null
+}
+
+/**
  * Transforme une ligne de flux Awin en produit Lynq.
  * Renvoie `null` si l'offre n'est pas présentable : sans titre, sans lien
  * d'achat, sans image, sans prix, hors stock ou dans une autre devise.
@@ -172,6 +183,7 @@ export function mapProduct(record, { merchantId, country, runId }) {
     brand: String(record.brand_name ?? '').trim() || null,
     gtin: normalizeGtin(record.ean) ?? normalizeGtin(record.product_GTIN),
     mpn: String(record.mpn ?? '').trim() || null,
+    source_category: sourceCategory(record),
     shipping_price: parsePrice(record.delivery_cost),
     country_code: country,
     last_seen_at: runId,
@@ -190,9 +202,17 @@ export async function selectProducts(records, options, max) {
   let read = 0
   let rejected = 0
   let websiteUrl = null
+  const awinCategories = new Map()
+  const merchantCategories = new Map()
+  const tally = (map, value) => {
+    const key = String(value ?? '').trim() || '(vide)'
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
 
   for await (const record of records) {
     read++
+    tally(awinCategories, record.category_name)
+    tally(merchantCategories, record.merchant_category)
     if (!websiteUrl) {
       const direct = httpsUrl(record.merchant_deep_link)
       if (direct) {
@@ -207,7 +227,7 @@ export async function selectProducts(records, options, max) {
   }
 
   const products = withGtin.concat(withoutGtin).slice(0, max)
-  return { products, read, rejected, withGtin: products.filter((p) => p.gtin).length, websiteUrl }
+  return { products, read, rejected, withGtin: products.filter((p) => p.gtin).length, websiteUrl, awinCategories, merchantCategories }
 }
 
 // --- Awin --------------------------------------------------------------------
@@ -323,6 +343,13 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
     max,
   )
   const { products, read, rejected, withGtin, websiteUrl } = selection
+  if (env.AWIN_SHOW_CATEGORIES === '1') {
+    const top = (map, n) => [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n)
+    console.log(`  Catégories Awin de ${advertiser.name} (${selection.awinCategories.size}) :`)
+    for (const [name, count] of top(selection.awinCategories, 60)) console.log(`    ${count}\t${name}`)
+    console.log(`  Catégories du marchand (${selection.merchantCategories.size}) :`)
+    for (const [name, count] of top(selection.merchantCategories, 40)) console.log(`    ${count}\t${name}`)
+  }
   const summary = `${products.length} offres retenues sur ${read} lues (${withGtin} avec code-barres, ${rejected} écartées)`
 
   if (!websiteUrl) throw new Error(`domaine du marchand introuvable dans le flux (${summary})`)
