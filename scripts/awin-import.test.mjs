@@ -216,6 +216,12 @@ test('rayons : libellés français, espagnols et anglais, le marchand avant Awin
   assert.equal(mapCategory('Boîtier Externe').id, 2414)
   assert.equal(mapCategory('Boîtier PC').id, 293)
   assert.equal(mapCategory('Libellé inconnu'), null)
+  assert.equal(mapCategory("Jeux d'Ambiance").id, 3793)
+  assert.equal(mapCategory('Jeux Vidéo').id, 1279)
+  assert.equal(mapCategory('Gants').id, 170)
+  assert.equal(mapCategory('Élégants')?.id ?? null, null)
+  assert.equal(root('Prise et Onduleur'), 'Appareils électroniques')
+  assert.equal(root('Cuisine et Dinette'), 'Jeux et jouets')
   assert.equal(mapCategory(''), null)
   const ctx = { merchantId: 1, country: 'FR', runId: 'r' }
   const product = mapProduct(offer({ category_name: 'Headsets', merchant_category: 'Casque' }), ctx)

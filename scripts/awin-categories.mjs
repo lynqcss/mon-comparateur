@@ -83,6 +83,29 @@ export const CATEGORY_RULES = [
   [/home accessories|décorations?/, 696, 'Maison et jardin > Décorations'],
   [/furniture|meubles?/, 436, 'Meubles'],
 
+  // --- Compléments (libellés moins fréquents) ---------------------------------------
+  [/cuisine et dinette/, 1253, 'Jeux et jouets > Jouets'],
+  [/poupées?/, 1257, 'Jeux et jouets > Jouets > Poupées, coffrets et figurines > Poupées'],
+  [/star wars|marvel/, 1255, 'Jeux et jouets > Jouets > Poupées, coffrets et figurines'],
+  [/décors|pinceaux|a[ée]rographes?|arts plastiques/, 5999, 'Arts et loisirs > Loisirs et arts créatifs > Modélisme'],
+  [/\bjeux?\b|gamemat/, 3793, 'Jeux et jouets > Jeux'],
+  [/onduleurs?|multiprises?/, 3160, `${EA} > Alimentation > Multiprises & parasurtenseurs`],
+  [/alimentation/, 275, `${EA} > Alimentation`],
+  [/lecteurs? de cartes/, 505801, `${EC} > Périphériques de saisie > Lecteurs de cartes électroniques`],
+  [/serveur nas/, 2414, `${EC} > Périphériques de stockage`],
+  [/fibre optique|injecteurs? poe/, 342, `${E} > Réseaux`],
+  [/smartphones?|coque|protection téléphone/, 264, `${E} > Communications > Téléphonie > Accessoires pour téléphones mobiles`],
+  [/caméra ip/, 364, "Maison et jardin > Sécurité à domicile et au bureau > Systèmes de surveillance et d'enregistrement"],
+  [/consoles?/, 1270, `${E} > Accessoires pour consoles de jeu vidéo`],
+  [/tablettes?|réalité virtuelle/, 222, E],
+  [/maintenance du pc|personnalisation du setup|streaming|confort des joueurs|connectique|carte contrôleur|rack amovible|support optique|support et station|périphériques de saisie/, 279, `${EA} > Accessoires pour ordinateurs`],
+  [/préparation culinaire|ustensiles|cuisson|vaisselle|[ée]lectroménager/, 536, 'Maison et jardin'],
+  [/[ée]criture|stylos|cahiers|fournitures|protection des documents|classement|support imprimable|etui cd/, 922, 'Fournitures de bureau'],
+  [/outillage/, 632, 'Quincaillerie'],
+  [/déguisements?/, 184, `${V} > Déguisements et accessoires`],
+  [/gilets?/, 1831, `${V} > Vêtements > Vêtements de plein air > Gilets et vestes sans manches`],
+  [/\bgants?\b/, 170, `${V} > Accessoires d'habillement > Gants et moufles`],
+
   // --- Libellés génériques, en dernier ---------------------------------------------
   [/^accessoires$|^accesorios$| \| accessoires$| \| accesorios$/, 167, `${V} > Accessoires d'habillement`],
 ]
