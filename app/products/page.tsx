@@ -20,6 +20,8 @@ const PAGE_SIZE = 36
 //   - paramètre inconnu  -> redirection vers la même URL sans lui (les liens
 //     entrants du type `?utm_source=` retombent ainsi sur la page en cache) ;
 //   - valeur invalide ou hors bornes -> 404.
+const SORTS = ['price_asc', 'price_desc', 'brand_asc', 'title_asc']
+
 const ALLOWED_PARAMS = new Set([
   'page', 'categoryId', 'rootCategory', 'categoryPath', 'q', 'brands',
   'minPrice', 'maxPrice', 'country', 'lang', 'sort', 'merchant',
@@ -60,7 +62,7 @@ function isValidProductsQuery(raw: RawParams): boolean {
   if (lang !== undefined && lang !== 'fr' && lang !== 'en') return false
 
   const sort = one('sort')
-  if (sort !== undefined && sort !== '' && sort !== 'price_asc' && sort !== 'price_desc') return false
+  if (sort !== undefined && sort !== '' && !SORTS.includes(sort)) return false
 
   for (const key of ['minPrice', 'maxPrice']) {
     const price = one(key)
@@ -107,7 +109,7 @@ type ProductsPageProps = {
     maxPrice?: string
     country?: string
     lang?: string
-    sort?: 'price_asc' | 'price_desc'
+    sort?: 'price_asc' | 'price_desc' | 'brand_asc' | 'title_asc'
     merchant?: string
   }>
 }
@@ -266,7 +268,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       ? offers.order('price_value', { ascending: true })
       : sort === 'price_desc'
         ? offers.order('price_value', { ascending: false })
-        : offers.order('id', { ascending: false })
+        : sort === 'brand_asc'
+          ? offers.order('brand', { ascending: true, nullsFirst: false }).order('id', { ascending: false })
+          : sort === 'title_asc'
+            ? offers.order('title', { ascending: true }).order('id', { ascending: false })
+            : offers.order('id', { ascending: false })
     ).range(from, to)
 
     groupList = (data || []).map((offer) => ({
@@ -303,6 +309,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       ? query.order('min_price', { ascending: true })
       : sort === 'price_desc'
         ? query.order('min_price', { ascending: false })
+        : sort === 'brand_asc'
+          ? query.order('brand', { ascending: true, nullsFirst: false }).order('group_key', { ascending: false })
+          : sort === 'title_asc'
+            ? query.order('title', { ascending: true }).order('group_key', { ascending: false })
         : // Ordre par défaut : les produits proposés par le plus de marchands.
           // À égalité, ceux dont le catalogue vient d'être synchronisé passent
           // devant : provisoire, pour faire descendre les fiches de démonstration
@@ -436,36 +446,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </label>
 
             <aside className="mt-6 hidden space-y-10 peer-checked:block lg:mt-0 lg:block">
-              {/* Rayons */}
-              <div>
-                <h2 className={sectionTitle}>{t.products.categories}</h2>
-                <div className="mt-4 space-y-0.5">
-                  <Link
-                    rel="nofollow"
-                    href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, page: null })}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
-                  >
-                    <Icon path={GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${!rootCategory ? 'text-[#0FA968]' : ''}`} />
-                    {t.products.all_offers}
-                  </Link>
-                  {rootCategories.map((root) => {
-                    const active = rootCategory === root
-                    return (
-                      <Link
-                        key={root}
-                        rel="nofollow"
-                        href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null, page: null })}
-                        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
-                      >
-                        <Icon path={ROOTS[root]?.icon ?? GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-[#0FA968]' : ''}`} />
-                        <span className="leading-snug">{rootLabel(root)}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Budget */}
+              {/* Prix */}
               <form action="/products" method="GET">
                 <input type="hidden" name="country" value={selectedCountry} />
                 <input type="hidden" name="lang" value={selectedLang} />
@@ -510,7 +491,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {allBrands.length > 0 && !merchantId ? (
                 <div>
                   <h2 className={sectionTitle}>{t.products.brands}</h2>
-                  <div className="mt-4 max-h-72 space-y-0.5 overflow-y-auto pr-1">
+                  <div className="mt-4 max-h-56 space-y-0.5 overflow-y-auto pr-1">
                     {allBrands.map((brand) => {
                       const checked = selectedBrands.some((name) => name === brand.name || brand.variants.includes(name))
                       const next = checked
@@ -540,6 +521,35 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                   </div>
                 </div>
               ) : null}
+
+              {/* Rayons */}
+              <div>
+                <h2 className={sectionTitle}>{t.products.categories}</h2>
+                <div className="mt-4 space-y-0.5">
+                  <Link
+                    rel="nofollow"
+                    href={buildUrl({ rootCategory: null, categoryId: null, categoryPath: null, page: null })}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${!rootCategory ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
+                  >
+                    <Icon path={GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${!rootCategory ? 'text-[#0FA968]' : ''}`} />
+                    {t.products.all_offers}
+                  </Link>
+                  {rootCategories.map((root) => {
+                    const active = rootCategory === root
+                    return (
+                      <Link
+                        key={root}
+                        rel="nofollow"
+                        href={buildUrl({ rootCategory: root, categoryId: null, categoryPath: null, page: null })}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-white' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-white'}`}
+                      >
+                        <Icon path={ROOTS[root]?.icon ?? GENERIC_ICON} className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-[#0FA968]' : ''}`} />
+                        <span className="leading-snug">{rootLabel(root)}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
             </aside>
           </div>
 

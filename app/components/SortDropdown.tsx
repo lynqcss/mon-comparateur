@@ -36,6 +36,8 @@ export default function SortDropdown() {
                 <option value="">{t.products.sort_by}</option>
                 <option value="price_asc">{t.products.sort_asc}</option>
                 <option value="price_desc">{t.products.sort_desc}</option>
+                <option value="brand_asc">{t.products.sort_brand}</option>
+                <option value="title_asc">{t.products.sort_title}</option>
             </select>
             <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
