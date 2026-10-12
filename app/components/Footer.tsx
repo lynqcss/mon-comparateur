@@ -39,6 +39,10 @@ export default function Footer() {
                             Lynq CSS
                             <br />
                             9 cours du Médoc, 33300 Bordeaux, France
+                            <br />
+                            <a href="mailto:contact@lynq-css.com" className="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-4 transition-colors hover:decoration-[#0FA968] dark:text-white">
+                                contact@lynq-css.com
+                            </a>
                         </address>
                     </div>
                     <div>
@@ -47,6 +51,7 @@ export default function Footer() {
                             <li><Link prefetch={false} href={buildUrl('/products')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.nav.products}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/merchants')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.nav.merchants}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/join')} className="hover:text-zinc-900 dark:hover:text-white transition-colors underline decoration-zinc-200 underline-offset-4">{t.nav.diffuse}</Link></li>
+                            <li><Link prefetch={false} href={buildUrl('/pricing')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.nav.pricing}</Link></li>
                             <li><Link prefetch={false} href={buildUrl('/how-it-works')} className="hover:text-zinc-900 dark:hover:text-white transition-colors">{t.footer.how_it_works}</Link></li>
                         </ul>
                     </div>

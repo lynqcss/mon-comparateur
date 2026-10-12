@@ -23,10 +23,10 @@ const ACTIVE: Module[] = [
         icon: 'M3 9l1.5-5h15L21 9M3 9v10a1 1 0 001 1h16a1 1 0 001-1V9M3 9h18M9 20v-6h6v6',
     },
     {
-        title: 'Inscriptions',
-        description: 'Suivre les demandes des marchands qui ont connecté leur compte Google Merchant Center.',
-        href: '/admin/onboarding',
-        icon: 'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6',
+        title: 'Demandes',
+        description: 'Lire les demandes envoyées par les marchands depuis le formulaire d’inscription.',
+        href: '/admin/leads',
+        icon: 'M4 5h16v14H4zM4 7l8 6 8-6',
     },
 ]
 

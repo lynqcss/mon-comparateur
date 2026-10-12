@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from '@/app/components/AppLink'
+import CopyButton from '@/app/components/CopyButton'
 
 export const metadata: Metadata = {
     title: 'Contact — Lynq CSS',
@@ -40,22 +41,29 @@ export default async function ContactPage({ searchParams }: Props) {
                 </p>
 
                 <div className="mt-12 grid gap-4 sm:grid-cols-2">
-                    <a
-                        href={`mailto:${EMAIL}`}
-                        className="group flex items-center gap-6 rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm transition-all hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
-                    >
+                    <div className="group flex items-center gap-6 rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm transition-all hover:border-zinc-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white transition-transform group-hover:scale-105 dark:bg-white dark:text-zinc-900">
                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">E-mail</h2>
-                            <p className="mt-1 break-all text-lg font-bold text-zinc-900 underline decoration-zinc-200 underline-offset-4 group-hover:decoration-zinc-900 dark:text-white dark:decoration-zinc-700 dark:group-hover:decoration-white">
-                                {EMAIL}
-                            </p>
+                            <div className="mt-1 flex items-center gap-3">
+                                <a
+                                    href={`mailto:${EMAIL}`}
+                                    className="break-all text-lg font-bold text-zinc-900 underline decoration-zinc-200 underline-offset-4 hover:decoration-zinc-900 dark:text-white dark:decoration-zinc-700 dark:hover:decoration-white"
+                                >
+                                    {EMAIL}
+                                </a>
+                                <CopyButton
+                                    value={EMAIL}
+                                    label={isEn ? 'Copy the e-mail address' : 'Copier l\u2019adresse e-mail'}
+                                    copiedLabel={isEn ? 'Address copied' : 'Adresse copiée'}
+                                />
+                            </div>
                         </div>
-                    </a>
+                    </div>
 
                     <div className="flex items-center gap-6 rounded-2xl border border-zinc-100 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-50 text-zinc-900 dark:bg-zinc-800 dark:text-white">

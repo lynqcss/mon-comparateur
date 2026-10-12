@@ -20,6 +20,7 @@ export const translations = {
         nav: {
             products: 'Tous nos produits',
             merchants: 'Nos marchands',
+            pricing: 'Tarifs',
             diffuse: 'Diffuser sur Lynq',
         },
         footer: {
@@ -251,6 +252,7 @@ export const translations = {
         nav: {
             products: 'All Products',
             merchants: 'Our Merchants',
+            pricing: 'Pricing',
             diffuse: 'Advertise on Lynq',
         },
         footer: {

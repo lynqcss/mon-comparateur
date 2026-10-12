@@ -192,6 +192,12 @@ export default async function JoinPage({ searchParams }: Props) {
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                 {t.join.final_support}
                             </div>
+                            <p className="text-sm text-zinc-400 dark:text-zinc-500">
+                                {isEn ? 'A question first? Write to us at' : 'Une question avant de démarrer ? Écrivez-nous à'}{' '}
+                                <a href="mailto:contact@lynq-css.com" className="font-semibold text-white underline underline-offset-4 dark:text-zinc-900">
+                                    contact@lynq-css.com
+                                </a>
+                            </p>
                         </div>
                     </div>
                 </div>
