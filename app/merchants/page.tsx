@@ -1,4 +1,5 @@
 // app/merchants/page.tsx
+import { unstable_cache } from 'next/cache'
 import Link from '@/app/components/AppLink'
 import { supabase } from '@/lib/supabaseClient'
 import { getTranslation } from '@/lib/i18n'
@@ -26,25 +27,32 @@ const PAGE_ROWS = 1000
 const MAX_ROWS = 50_000
 
 /**
- * Marchands ayant au moins une offre dans un pays, avec leur nombre d'offres.
- * Le nombre sert seulement à savoir qui lister : il n'est pas affiché.
+ * Identifiants des marchands ayant au moins une offre dans un pays.
+ * Il faut parcourir toutes les offres du pays (une vingtaine de pages de
+ * 1 000 lignes, plusieurs secondes) : le résultat est donc mis en cache une
+ * heure, comme les facettes de /products, le catalogue ne changeant qu'une
+ * fois par jour.
  */
-async function countOffersByMerchant(country: string): Promise<Map<number, number>> {
-    const counts = new Map<number, number>()
-    for (let from = 0; from < MAX_ROWS; from += PAGE_ROWS) {
-        const { data } = await supabase
-            .from('products')
-            .select('merchant_id')
-            .eq('country_code', country)
-            .not('merchant_id', 'is', null)
-            .order('id')
-            .range(from, from + PAGE_ROWS - 1)
-        if (!data || data.length === 0) break
-        for (const row of data) counts.set(row.merchant_id, (counts.get(row.merchant_id) ?? 0) + 1)
-        if (data.length < PAGE_ROWS) break
-    }
-    return counts
-}
+const getMerchantIdsWithOffers = unstable_cache(
+    async (country: string): Promise<number[]> => {
+        const ids = new Set<number>()
+        for (let from = 0; from < MAX_ROWS; from += PAGE_ROWS) {
+            const { data } = await supabase
+                .from('products')
+                .select('merchant_id')
+                .eq('country_code', country)
+                .not('merchant_id', 'is', null)
+                .order('id')
+                .range(from, from + PAGE_ROWS - 1)
+            if (!data || data.length === 0) break
+            for (const row of data) ids.add(row.merchant_id)
+            if (data.length < PAGE_ROWS) break
+        }
+        return Array.from(ids)
+    },
+    ['merchants-with-offers-v1'],
+    { revalidate: 3600, tags: ['catalog'] },
+)
 
 function getSafeDomain(url: string | null) {
     if (!url) return ''
@@ -63,8 +71,7 @@ export default async function MerchantsPage({ searchParams }: MerchantsPageProps
     const isFr = selectedLang !== 'en'
     const t = getTranslation(selectedLang)
 
-    const offerCounts = await countOffersByMerchant(selectedCountry)
-    const uniqueIds = Array.from(offerCounts.keys())
+    const uniqueIds = await getMerchantIdsWithOffers(selectedCountry)
 
     let merchantList: MerchantRow[] = []
 
