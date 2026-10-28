@@ -7,6 +7,11 @@ name: Awin — inspection
 
 on:
   workflow_dispatch:
+    inputs:
+      advertiser_id:
+        description: "Identifiant Awin de l'annonceur dont on inspecte le catalogue (vide : le premier accepté)"
+        required: false
+        default: "123918"
 
 permissions:
   contents: read
@@ -23,4 +28,5 @@ jobs:
       - name: Structure des flux Awin
         env:
           AWIN_FEED_LIST_URL: ${{ secrets.AWIN_FEED_LIST_URL }}
+          AWIN_INSPECT_ADVERTISER: ${{ github.event.inputs.advertiser_id }}
         run: node scripts/awin-inspect.mjs

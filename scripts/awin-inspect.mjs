@@ -81,7 +81,13 @@ for (const column of columns) {
 const statusColumn = columns.find((c) => /membership/i.test(c))
 const joined = statusColumn ? rows.filter((r) => /^(active|joined)$/i.test(String(r[statusColumn]).trim())) : []
 console.log(`\nProgrammes acceptés : ${joined.length}`)
-const sample = joined[0] ?? rows[0]
+// AWIN_INSPECT_ADVERTISER : inspecter le catalogue d'un annonceur précis
+// (son flux au format « Google » en priorité).
+const wanted = String(process.env.AWIN_INSPECT_ADVERTISER ?? '').trim()
+const candidates = wanted ? joined.filter((r) => String(r['Advertiser ID']).trim() === wanted) : joined
+candidates.sort((a, b) => Number(/google/i.test(String(b['Datafeed Format']))) - Number(/google/i.test(String(a['Datafeed Format']))))
+if (wanted && candidates.length === 0) console.log(`Annonceur ${wanted} absent des programmes acceptés.`)
+const sample = candidates[0] ?? joined[0] ?? rows[0]
 if (!sample) process.exit(0)
 
 console.log('\n== Exemple de ligne')
@@ -123,4 +129,9 @@ if (first.trimStart().startsWith('{')) {
   show('En-tête :', first.slice(0, 1500))
   show('1re ligne :', (lines[1] ?? '').slice(0, 900))
   show('2e ligne :', (lines[2] ?? '').slice(0, 900))
+  // Colonne par colonne, plus lisible pour un flux à beaucoup de colonnes.
+  const delimiter = first.includes('	') ? '	' : ','
+  const parsed = []
+  for await (const row of readCsv(Readable.from([text]), delimiter)) { parsed.push(row); if (parsed.length >= 2) break }
+  for (const [key, value] of Object.entries(parsed[0] ?? {})) show(`  ${key} :`, String(value).slice(0, 300))
 }
