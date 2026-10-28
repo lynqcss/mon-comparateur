@@ -10,7 +10,7 @@ import { gzipSync } from 'node:zlib'
 
 import { CATEGORY_RULES, mapCategory } from './awin-categories.mjs'
 import {
-  FEED_COLUMNS, createCsvParser, feedDownloadUrl, inCountry, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
+  FEED_COLUMNS, createCsvParser, feedDownloadUrl, googleToAwin, inCountry, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
 } from './awin-import.mjs'
 
 const csvLine = (cells) => cells.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',')
@@ -117,6 +117,30 @@ test('liste Awin : seuls les programmes acceptés, flux français préféré', (
   assert.deepEqual(result.map((a) => a.id), [300, 100])
   assert.deepEqual(result.find((a) => a.id === 100).feeds.map((f) => f.id), [12])
   assert.deepEqual(result.find((a) => a.id === 300).feeds.map((f) => f.id), [31])
+})
+
+test('format Google : colonnes Merchant Center ramenées au format Awin', () => {
+  const record = {
+    advertiser_id: '123918', advertiser_name: 'PlanetFoot', id: '4026',
+    title: 'Maillot domicile 2026', description: 'Maillot officiel',
+    link: 'https://planetfoot.com/products/maillot?variant=4026',
+    image_link: 'https://cdn.shopify.com/maillot.jpg',
+    aw_deep_link: 'https://www.awin1.com/pclick.php?p=1&a=2&m=123918',
+    google_product_category: 'Apparel & Accessories > Clothing', product_type: 'Maillots',
+    gtin: '3612345678901', mpn: 'MD26', brand: 'Nike', availability: 'in_stock',
+    price: '89.99 EUR', sale_price: '69,90 EUR', shipping: 'BE:::7.90 EUR,FR:::4.90 EUR',
+  }
+  const product = mapProduct(googleToAwin(record), { merchantId: 1, country: 'FR', runId: 'r' })
+  assert.equal(product.title, 'Maillot domicile 2026')
+  assert.equal(product.link, record.aw_deep_link, 'le lien suivi par Awin, pas le lien direct')
+  assert.equal(product.price_value, 69.9, 'le prix soldé quand il est plus bas')
+  assert.equal(product.shipping_price, 4.9, 'les frais de port du pays diffusé')
+  assert.equal(product.gtin, '3612345678901')
+  assert.equal(product.brand, 'Nike')
+  assert.equal(product.offer_id, '4026')
+  assert.equal(mapProduct(googleToAwin({ ...record, availability: 'out_of_stock' }), { merchantId: 1, country: 'FR', runId: 'r' }), null)
+  assert.equal(googleToAwin({ ...record, sale_price: '', shipping: '0 EUR' }).search_price, '89.99')
+  assert.equal(googleToAwin({ ...record, sale_price: '', shipping: '0 EUR' }).delivery_cost, '0')
 })
 
 test('pays : programmes du pays ou avec un flux dans sa langue', () => {

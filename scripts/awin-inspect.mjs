@@ -132,6 +132,6 @@ if (first.trimStart().startsWith('{')) {
   // Colonne par colonne, plus lisible pour un flux à beaucoup de colonnes.
   const delimiter = first.includes('	') ? '	' : ','
   const parsed = []
-  for await (const row of readCsv(Readable.from([text]), delimiter)) { parsed.push(row); if (parsed.length >= 2) break }
+  for await (const row of readCsv(Readable.from([Buffer.from(text)]), delimiter)) { parsed.push(row); if (parsed.length >= 2) break }
   for (const [key, value] of Object.entries(parsed[0] ?? {})) show(`  ${key} :`, String(value).slice(0, 300))
 }

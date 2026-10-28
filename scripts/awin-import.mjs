@@ -196,6 +196,62 @@ export function mapProduct(record, { merchantId, country, runId }) {
   }
 }
 
+/** « 29.99 EUR », « 29,99 EUR » ou « 29.99 » → { value, currency }. */
+function splitGooglePrice(raw) {
+  const match = String(raw ?? '').trim().match(/^(\d+(?:[.,]\d+)?)\s*([A-Za-z]{3})?$/)
+  return match ? { value: match[1].replace(',', '.'), currency: (match[2] ?? '').toUpperCase() } : null
+}
+
+/**
+ * Frais de port au format Google : « FR:::4.90 EUR », plusieurs entrées
+ * séparées par des virgules, ou simplement « 4.90 EUR ». On garde celle du
+ * pays diffusé, à défaut celle sans pays.
+ */
+function googleShipping(raw, country) {
+  let fallback = null
+  for (const entry of String(raw ?? '').split(',')) {
+    const parts = entry.split(':')
+    const price = splitGooglePrice(parts[parts.length - 1])
+    if (!price) continue
+    const where = parts.length > 1 ? parts[0].trim().toUpperCase() : ''
+    if (where === country) return price.value
+    if (!where && fallback === null) fallback = price.value
+  }
+  return fallback ?? ''
+}
+
+/**
+ * Ligne d'un flux Awin au format « Google » (colonnes Merchant Center) →
+ * ligne au format Awin classique, pour réutiliser `mapProduct` tel quel.
+ * `aw_deep_link` est le lien suivi par Awin : c'est lui qui rémunère le clic.
+ */
+export function googleToAwin(record, country = 'FR') {
+  const regular = splitGooglePrice(record.price)
+  const sale = splitGooglePrice(record.sale_price)
+  const price = sale && Number(sale.value) > 0 && (!regular || Number(sale.value) < Number(regular.value)) ? sale : regular
+  const availability = String(record.availability ?? '').trim().toLowerCase().replace(/_/g, ' ')
+  return {
+    aw_deep_link: record.aw_deep_link,
+    merchant_deep_link: record.link,
+    product_name: record.title,
+    aw_product_id: record.id,
+    merchant_product_id: record.id,
+    merchant_image_url: record.image_link,
+    description: record.description,
+    search_price: price?.value ?? '',
+    currency: price?.currency || 'EUR',
+    delivery_cost: googleShipping(record.shipping, country),
+    merchant_name: record.advertiser_name,
+    merchant_id: record.advertiser_id,
+    brand_name: record.brand,
+    ean: record.gtin,
+    mpn: record.mpn,
+    in_stock: availability === 'out of stock' ? '0' : '1',
+    category_name: record.google_product_category,
+    merchant_category: record.product_type,
+  }
+}
+
 /**
  * Lit tout un flux et garde au plus `max` offres. Les offres avec code-barres
  * passent en premier : ce sont les seules que Lynq peut comparer entre
@@ -307,19 +363,27 @@ async function openList(env) {
 }
 
 /** Lignes de tous les flux d'un annonceur, l'un après l'autre. */
-async function* readAdvertiserFeeds(env, advertiser) {
+async function* readAdvertiserFeeds(env, advertiser, country = 'FR') {
   if (env.AWIN_FEED_DIR) {
     yield* readCsv(createReadStream(path.join(env.AWIN_FEED_DIR, `${advertiser.id}.csv.gz`)).pipe(createGunzip()))
     return
   }
-  const feeds = advertiser.feeds.filter((feed) => feed.format.toLowerCase() === 'awin')
-  if (feeds.length === 0) {
-    throw new Error('flux au format « Google » uniquement : ce format n’est pas encore pris en charge')
+  // Format Awin classique de préférence ; sinon le format « Google ».
+  const awin = advertiser.feeds.filter((feed) => feed.format.toLowerCase() !== 'google')
+  const google = advertiser.feeds.filter((feed) => feed.format.toLowerCase() === 'google')
+  if (awin.length > 0) {
+    for (const feed of awin) {
+      const res = await fetch(feedDownloadUrl(feed))
+      if (!res.ok) throw new Error(`Flux Awin ${feed.id} : HTTP ${res.status}`)
+      yield* readCsv(Readable.fromWeb(res.body).pipe(createGunzip()))
+    }
+    return
   }
-  for (const feed of feeds) {
-    const res = await fetch(feedDownloadUrl(feed))
+  for (const feed of google) {
+    if (!/^https:\/\//.test(feed.url)) throw new Error(`adresse de flux inattendue pour le flux ${feed.id}`)
+    const res = await fetch(feed.url)
     if (!res.ok) throw new Error(`Flux Awin ${feed.id} : HTTP ${res.status}`)
-    yield* readCsv(Readable.fromWeb(res.body).pipe(createGunzip()))
+    for await (const record of readCsv(Readable.fromWeb(res.body).pipe(createGunzip()))) yield googleToAwin(record, country)
   }
 }
 
@@ -372,7 +436,7 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
   // Le marchand doit exister avant ses produits. Son domaine vient du flux :
   // on lit d'abord avec un identifiant provisoire, puis on le fixe.
   const selection = await selectProducts(
-    readAdvertiserFeeds(env, advertiser),
+    readAdvertiserFeeds(env, advertiser, country),
     { merchantId: 0, country, runId },
     max,
   )
