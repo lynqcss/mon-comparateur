@@ -250,7 +250,12 @@ export function joinedAdvertisers(listRows) {
     const feedId = Number(row['Feed ID'])
     if (!Number.isInteger(id) || !Number.isInteger(feedId)) continue
     const language = String(row['Language'] ?? '').trim().toLowerCase()
-    const entry = byAdvertiser.get(id) ?? { id, name: String(row['Advertiser Name'] ?? '').trim(), feeds: [] }
+    const entry = byAdvertiser.get(id) ?? {
+      id,
+      name: String(row['Advertiser Name'] ?? '').trim(),
+      region: String(row['Primary Region'] ?? '').trim().toUpperCase(),
+      feeds: [],
+    }
     entry.feeds.push({
       id: feedId,
       language,
@@ -267,6 +272,19 @@ export function joinedAdvertisers(listRows) {
     entry.feeds = (french.length ? french : entry.feeds).sort((a, b) => b.products - a.products)
   }
   return [...byAdvertiser.values()].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+// Langue attendue des flux pour chaque pays diffusé.
+const COUNTRY_LANGUAGES = { FR: 'fr', PL: 'pl' }
+
+/**
+ * Programmes diffusables dans un pays : ceux de ce pays, ou ceux d'ailleurs
+ * qui publient un flux dans sa langue. Une boutique slovaque ou allemande sans
+ * flux français n'a rien à faire sur le site français.
+ */
+export function inCountry(advertisers, country) {
+  const language = COUNTRY_LANGUAGES[country]
+  return advertisers.filter((a) => a.region === country || (language && a.feeds.some((f) => f.language.startsWith(language))))
 }
 
 /**
@@ -414,8 +432,21 @@ export async function main(env = process.env) {
 
   const listRows = []
   for await (const row of readCsv(await openList(env))) listRows.push(row)
-  const advertisers = joinedAdvertisers(listRows)
-  console.log(`${advertisers.length} annonceur(s) accepté(s) sur ${new Set(listRows.map((r) => r['Advertiser ID'])).size} dans la liste Awin.`)
+  const joined = joinedAdvertisers(listRows)
+  const advertisers = inCountry(joined, country)
+  console.log(`${joined.length} annonceur(s) accepté(s) sur ${new Set(listRows.map((r) => r['Advertiser ID'])).size} dans la liste Awin, dont ${advertisers.length} diffusable(s) en ${country}.`)
+  for (const a of joined.filter((x) => !advertisers.includes(x))) {
+    console.log(`  HORS ${country}  ${a.name} (${a.id}) — programme ${a.region || '?'}, flux en ${a.feeds.map((f) => f.language || '?').join(', ')}`)
+  }
+
+  // Diagnostic : où en sont, dans la liste Awin, des annonceurs que l'on attend.
+  for (const id of String(env.AWIN_WATCH_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    const rows = listRows.filter((r) => String(r['Advertiser ID']).trim() === id)
+    if (rows.length === 0) console.log(`  SUIVI ${id} — absent de la liste des flux Awin`)
+    for (const r of rows) {
+      console.log(`  SUIVI ${id} ${r['Advertiser Name']} — statut ${r['Membership Status']}, région ${r['Primary Region']}, langue ${r['Language']}, format ${r['Datafeed Format'] ?? '?'}, ${r['No of products']} produits`)
+    }
+  }
 
   let imported = 0
   let total = 0
@@ -434,7 +465,22 @@ export async function main(env = process.env) {
     }
   }
 
-  if (!dryRun && imported > 0) {
+  // Les marchands Awin qui ne sont plus diffusables (programme quitté, ou
+  // hors du pays) perdent leurs offres. Seulement si la liste a été lue
+  // correctement, pour ne jamais vider le site sur une liste vide.
+  let purged = 0
+  if (!dryRun && advertisers.length > 0) {
+    const keep = new Set(advertisers.map((a) => a.id))
+    const merchants = (await db('GET', '/merchants?select=id,name,awin_advertiser_id&source=eq.awin')) ?? []
+    for (const m of merchants) {
+      if (keep.has(Number(m.awin_advertiser_id))) continue
+      await db('DELETE', `/products?merchant_id=eq.${m.id}`, undefined, 'return=minimal')
+      console.log(`  RETIRÉ ${m.name} (${m.awin_advertiser_id}) — offres supprimées du site`)
+      purged++
+    }
+  }
+
+  if (!dryRun && (imported > 0 || purged > 0)) {
     await db('POST', '/rpc/refresh_product_groups', {})
     console.log('Vue de comparaison rafraîchie.')
   }

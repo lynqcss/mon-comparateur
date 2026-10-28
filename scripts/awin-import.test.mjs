@@ -10,7 +10,7 @@ import { gzipSync } from 'node:zlib'
 
 import { CATEGORY_RULES, mapCategory } from './awin-categories.mjs'
 import {
-  FEED_COLUMNS, createCsvParser, feedDownloadUrl, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
+  FEED_COLUMNS, createCsvParser, feedDownloadUrl, inCountry, joinedAdvertisers, main, mapProduct, normalizeGtin, parsePrice, readCsv, selectProducts,
 } from './awin-import.mjs'
 
 const csvLine = (cells) => cells.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(',')
@@ -119,6 +119,16 @@ test('liste Awin : seuls les programmes acceptés, flux français préféré', (
   assert.deepEqual(result.find((a) => a.id === 300).feeds.map((f) => f.id), [31])
 })
 
+test('pays : programmes du pays ou avec un flux dans sa langue', () => {
+  const rows = [
+    { 'Advertiser ID': '1', 'Advertiser Name': 'Boutique FR', 'Primary Region': 'FR', 'Membership Status': 'active', 'Feed ID': '11', Language: 'English' },
+    { 'Advertiser ID': '2', 'Advertiser Name': 'Marque US', 'Primary Region': 'US', 'Membership Status': 'active', 'Feed ID': '21', Language: 'French' },
+    { 'Advertiser ID': '3', 'Advertiser Name': 'Lunzo SK', 'Primary Region': 'SK', 'Membership Status': 'active', 'Feed ID': '31', Language: 'Slovak' },
+    { 'Advertiser ID': '4', 'Advertiser Name': 'Lunzo DE', 'Primary Region': 'DE', 'Membership Status': 'active', 'Feed ID': '41', Language: 'German' },
+  ]
+  assert.deepEqual(inCountry(joinedAdvertisers(rows), 'FR').map((a) => a.id), [1, 2])
+})
+
 test('liste Awin réelle : statut, format et adresse de téléchargement', () => {
   const url = 'https://productdata.awin.com/datafeed/download/apikey/KEY/fid/115782/format/csv/language/fr/delimiter/%2C/compression/gzip/columns/'
   const rows = [
@@ -188,7 +198,7 @@ test('import complet contre un faux Supabase : marchand, offres, purge, rafraîc
   const order = calls.map((c) => `${c.method} ${c.url.split('?')[0]}`)
   assert.deepEqual(order, [
     'POST /rest/v1/merchants', 'POST /rest/v1/products', 'DELETE /rest/v1/products',
-    'PATCH /rest/v1/merchants', 'POST /rest/v1/sync_logs', 'POST /rest/v1/rpc/refresh_product_groups',
+    'PATCH /rest/v1/merchants', 'POST /rest/v1/sync_logs', 'GET /rest/v1/merchants', 'POST /rest/v1/rpc/refresh_product_groups',
   ])
 })
 
