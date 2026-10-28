@@ -303,8 +303,9 @@ export function joinedAdvertisers(listRows) {
   for (const row of listRows) {
     if (String(row['Membership Status'] ?? '').trim().toLowerCase() !== 'active') continue
     const id = Number(row['Advertiser ID'])
-    const feedId = Number(row['Feed ID'])
-    if (!Number.isInteger(id) || !Number.isInteger(feedId)) continue
+    // Identifiant numérique au format Awin, « F3201 » au format Google.
+    const feedId = String(row['Feed ID'] ?? '').trim()
+    if (!Number.isInteger(id) || !feedId) continue
     const language = String(row['Language'] ?? '').trim().toLowerCase()
     const entry = byAdvertiser.get(id) ?? {
       id,

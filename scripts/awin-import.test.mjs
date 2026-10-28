@@ -115,8 +115,8 @@ test('liste Awin : seuls les programmes acceptés, flux français préféré', (
   ]
   const result = joinedAdvertisers(rows)
   assert.deepEqual(result.map((a) => a.id), [300, 100])
-  assert.deepEqual(result.find((a) => a.id === 100).feeds.map((f) => f.id), [12])
-  assert.deepEqual(result.find((a) => a.id === 300).feeds.map((f) => f.id), [31])
+  assert.deepEqual(result.find((a) => a.id === 100).feeds.map((f) => f.id), ['12'])
+  assert.deepEqual(result.find((a) => a.id === 300).feeds.map((f) => f.id), ['31'])
 })
 
 test('format Google : colonnes Merchant Center ramenées au format Awin', () => {
@@ -151,6 +151,8 @@ test('pays : programmes du pays ou avec un flux dans sa langue', () => {
     { 'Advertiser ID': '4', 'Advertiser Name': 'Lunzo DE', 'Primary Region': 'DE', 'Membership Status': 'active', 'Feed ID': '41', Language: 'German' },
   ]
   assert.deepEqual(inCountry(joinedAdvertisers(rows), 'FR').map((a) => a.id), [1, 2])
+  const google = joinedAdvertisers([{ 'Advertiser ID': '123918', 'Advertiser Name': 'PlanetFoot', 'Primary Region': 'FR', 'Membership Status': 'active', 'Datafeed Format': 'Google', 'Feed ID': 'F3201', Language: 'French' }])
+  assert.deepEqual(google.map((a) => a.feeds[0].id), ['F3201'], 'identifiant de flux non numérique au format Google')
 })
 
 test('liste Awin réelle : statut, format et adresse de téléchargement', () => {
