@@ -180,7 +180,8 @@ test('import complet contre un faux Supabase : marchand, offres, purge, rafraîc
 
   assert.equal(result.imported, 1)
   assert.equal(result.total, 2)
-  assert.deepEqual(result.failures, ['Vide'], 'un flux vide est signalé et ne supprime rien')
+  assert.deepEqual(result.failures, [], 'un flux vide ne fait pas échouer l’import')
+  assert.deepEqual(result.skipped, ['Vide'], 'un flux vide est signalé et ne supprime rien')
 
   const merchant = calls.find((c) => c.url.startsWith('/rest/v1/merchants?on_conflict'))
   assert.equal(merchant.body[0].awin_advertiser_id, 100)

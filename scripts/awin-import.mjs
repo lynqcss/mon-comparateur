@@ -360,6 +360,13 @@ async function upsertMerchant(db, advertiser, websiteUrl, country) {
 
 // --- Import d'un annonceur ----------------------------------------------------
 
+/**
+ * Flux lisible mais sans rien d'exploitable (aucune offre valide, pas de
+ * domaine) : le marchand est ignoré sans faire échouer l'import, qui ne passe
+ * en échec que sur un vrai incident (téléchargement, base de données).
+ */
+class NothingToImport extends Error {}
+
 async function importAdvertiser(env, db, advertiser, { runId, max, country, dryRun }) {
   const started = Date.now()
   // Le marchand doit exister avant ses produits. Son domaine vient du flux :
@@ -382,8 +389,8 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
   }
   const summary = `${products.length} offres retenues sur ${read} lues (${withGtin} avec code-barres, ${selection.categorized} rangées dans un rayon, ${rejected} écartées)`
 
-  if (!websiteUrl) throw new Error(`domaine du marchand introuvable dans le flux (${summary})`)
-  if (products.length === 0) throw new Error(`aucune offre valide (${summary})`)
+  if (!websiteUrl) throw new NothingToImport(`domaine du marchand introuvable dans le flux (${summary})`)
+  if (products.length === 0) throw new NothingToImport(`aucune offre valide (${summary})`)
   if (dryRun) return { summary: `[essai] ${summary} — ${websiteUrl}`, count: products.length }
 
   const merchantId = await upsertMerchant(db, advertiser, websiteUrl, country)
@@ -451,6 +458,7 @@ export async function main(env = process.env) {
   let imported = 0
   let total = 0
   const failures = []
+  const skipped = []
   for (const advertiser of advertisers) {
     try {
       const result = await importAdvertiser(env, db, advertiser, { runId, max, country, dryRun })
@@ -460,6 +468,11 @@ export async function main(env = process.env) {
     } catch (error) {
       // Un flux en erreur n'arrête pas les autres marchands.
       const message = error instanceof Error ? error.message : String(error)
+      if (error instanceof NothingToImport) {
+        console.log(`  IGNORÉ ${advertiser.name} (${advertiser.id}) — ${message}`)
+        skipped.push(advertiser.name)
+        continue
+      }
       console.log(`  ÉCHEC ${advertiser.name} (${advertiser.id}) — ${message}`)
       failures.push(advertiser.name)
     }
@@ -484,8 +497,8 @@ export async function main(env = process.env) {
     await db('POST', '/rpc/refresh_product_groups', {})
     console.log('Vue de comparaison rafraîchie.')
   }
-  console.log(`Terminé : ${imported} marchand(s), ${total} offre(s), ${failures.length} échec(s).`)
-  return { advertisers: advertisers.length, imported, total, failures }
+  console.log(`Terminé : ${imported} marchand(s), ${total} offre(s), ${skipped.length} ignoré(s), ${failures.length} échec(s).`)
+  return { advertisers: advertisers.length, imported, total, failures, skipped }
 }
 
 const invokedDirectly = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1]).href
