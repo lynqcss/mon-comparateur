@@ -490,6 +490,26 @@ async function importAdvertiser(env, db, advertiser, { runId, max, country, dryR
 
 // --- Programme principal ------------------------------------------------------
 
+/**
+ * Demande au site de vider le cache du catalogue, pour que les nouveaux
+ * marchands apparaissent tout de suite dans l'annuaire et les filtres.
+ * Facultatif : sans LYNQ_SITE_URL et CRON_SECRET, ou en cas d'échec, le
+ * cache expire de lui-même et l'import n'est pas compté comme raté.
+ */
+async function revalidateSite(env) {
+  if (!env.LYNQ_SITE_URL || !env.CRON_SECRET) return
+  try {
+    const response = await fetch(`${env.LYNQ_SITE_URL.replace(/\/$/, '')}/api/revalidate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+      signal: AbortSignal.timeout(15_000),
+    })
+    console.log(response.ok ? 'Cache du site vidé.' : `Cache du site non vidé : HTTP ${response.status}.`)
+  } catch (error) {
+    console.log(`Cache du site non vidé : ${error.message}`)
+  }
+}
+
 export async function main(env = process.env) {
   const dryRun = env.DRY_RUN === '1'
   const max = Number(env.AWIN_MAX_PRODUCTS) || 1000
@@ -561,6 +581,7 @@ export async function main(env = process.env) {
   if (!dryRun && (imported > 0 || purged > 0)) {
     await db('POST', '/rpc/refresh_product_groups', {})
     console.log('Vue de comparaison rafraîchie.')
+    await revalidateSite(env)
   }
   console.log(`Terminé : ${imported} marchand(s), ${total} offre(s), ${skipped.length} ignoré(s), ${failures.length} échec(s).`)
   return { advertisers: advertisers.length, imported, total, failures, skipped }

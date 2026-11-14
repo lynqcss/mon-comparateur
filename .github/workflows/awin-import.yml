@@ -52,6 +52,9 @@ jobs:
           AWIN_FEED_LIST_URL: ${{ secrets.AWIN_FEED_LIST_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Vidage du cache du site après l'import (même secret que dans Vercel).
+          LYNQ_SITE_URL: https://lynq-css.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
           AWIN_MAX_PRODUCTS: ${{ github.event.inputs.max_products || '1000' }}
           # Annonceurs acceptés mais sans offres sur le site : statut dans la liste Awin.
           AWIN_WATCH_IDS: "115709,123918,129201,128677,126139,127469,117251,82371,19976"
