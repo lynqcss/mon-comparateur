@@ -11,7 +11,13 @@ export async function POST(request: Request) {
     if (denied) return denied
 
     const trigger = isInternalAuthorization(request.headers.get('authorization')) ? 'schedule' : 'manual'
-    const result = await runAccountSync(trigger)
+    let result
+    try {
+        result = await runAccountSync(trigger)
+    } catch (error) {
+        // E.g. the sync log table does not exist yet (SQL script not run).
+        return Response.json({ status: 'error', error: error instanceof Error ? error.message : String(error) }, { status: 500 })
+    }
     if (result.status === 'busy') {
         return Response.json({ status: 'busy', error: 'Une synchro est déjà en cours.' }, { status: 409 })
     }
