@@ -65,6 +65,8 @@ export type SyncPlan =
     | { abort: false; upserts: AccountRow[]; deactivate: string[]; changes: SyncChanges }
 
 export const MCA_EXCLUSION = 'mca'
+/** Exclusion set by hand from the admin (marketplace…), kept by every sync. */
+export const MANUAL_EXCLUSION = 'manual'
 
 /** Fields compared to report what changed for an existing account. */
 const TRACKED_FIELDS = [
